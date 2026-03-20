@@ -40,7 +40,6 @@ async def user_create_post(
     post, avg_rating = await _service(db).get_post_or_404(created.id)
     return PostResponse(
         id=post.id,
-        authorId=post.author_id,
         mediaUrls=list(post.media_urls or []),
         title=post.title,
         description=post.description,
@@ -51,7 +50,6 @@ async def user_create_post(
         averageRating=(round(float(avg_rating), 2) if avg_rating is not None else None),
         createdAt=post.created_at,
         updatedAt=post.updated_at,
-        author={"id": post.author.id, "phone": post.author.phone},
     )
 
 
@@ -102,7 +100,6 @@ async def list_favorites(
     items = [
         PostResponse(
             id=post.id,
-            authorId=post.author_id,
             mediaUrls=list(post.media_urls or []),
             title=post.title,
             description=post.description,
@@ -115,7 +112,6 @@ async def list_favorites(
             ),
             createdAt=post.created_at,
             updatedAt=post.updated_at,
-            author={"id": post.author.id, "phone": post.author.phone},
         )
         for post, avg_rating in rows
     ]

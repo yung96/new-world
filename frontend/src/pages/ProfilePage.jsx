@@ -80,7 +80,7 @@ export function ProfilePage() {
           {favoritesQuery.data?.items?.map((post) => (
             <div key={post.id} className="rounded-xl border border-zinc-200 p-3">
               <p className="text-sm font-semibold">{post.title}</p>
-              <p className="text-xs text-zinc-500">#{post.id} · @{post.author.phone}</p>
+              <p className="text-xs text-zinc-500">#{post.id}</p>
               <Link to={`/posts/${post.id}`} className="mt-2 inline-block text-xs text-indigo-700">
                 Открыть
               </Link>

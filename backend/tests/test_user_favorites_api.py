@@ -24,9 +24,9 @@ async def _create_post(client, headers: dict[str, str], title: str) -> int:
 
 
 async def test_user_favorites_add_list_remove_cycle(client):
-    author_headers = await _auth_headers(client, "+79000000001")
+    creator_headers = await _auth_headers(client, "+79000000001")
     user_headers = await _auth_headers(client, "+79000000002")
-    post_id = await _create_post(client, author_headers, "Favorite target")
+    post_id = await _create_post(client, creator_headers, "Favorite target")
 
     add_resp = await client.post(f"/api/user/favorites/{post_id}", headers=user_headers)
     assert add_resp.status_code == 204
@@ -35,6 +35,9 @@ async def test_user_favorites_add_list_remove_cycle(client):
     assert list_resp.status_code == 200
     items = list_resp.json()["items"]
     assert any(item["id"] == post_id for item in items)
+    target = next(item for item in items if item["id"] == post_id)
+    assert "authorId" not in target
+    assert "author" not in target
 
     remove_resp = await client.delete(
         f"/api/user/favorites/{post_id}", headers=user_headers

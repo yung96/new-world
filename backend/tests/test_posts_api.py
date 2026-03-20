@@ -27,9 +27,9 @@ async def _create_post(client, headers: dict[str, str], *, title: str = "Тес�
 
 
 async def test_post_create_and_delete_cycle(client):
-    author_headers = await _auth_headers(client, "+70000000001")
+    creator_headers = await _auth_headers(client, "+70000000001")
 
-    interest_resp = await client.post("/api/interests", json={"name": "Пешие маршруты"}, headers=author_headers)
+    interest_resp = await client.post("/api/interests", json={"name": "Пешие маршруты"}, headers=creator_headers)
     assert interest_resp.status_code == 201
     interest_id = interest_resp.json()["id"]
 
@@ -44,7 +44,7 @@ async def test_post_create_and_delete_cycle(client):
             "interestIds": [interest_id],
             "season": Season.summer.value,
         },
-        headers=author_headers,
+        headers=creator_headers,
     )
     assert create_resp.status_code == 201
     post = create_resp.json()
@@ -52,17 +52,24 @@ async def test_post_create_and_delete_cycle(client):
     assert interest_id in post["interestIds"]
     assert post["geoLat"] == 55.7961
     assert post["geoLng"] == 49.1064
+    assert "authorId" not in post
+    assert "author" not in post
     post_id = post["id"]
 
     get_resp = await client.get(f"/api/posts/{post_id}")
     assert get_resp.status_code == 200
     assert get_resp.json()["id"] == post_id
+    assert "authorId" not in get_resp.json()
+    assert "author" not in get_resp.json()
 
     list_resp = await client.get("/api/posts")
     assert list_resp.status_code == 200
     payload = list_resp.json()
     assert payload["total"] >= 1
     assert any(item["id"] == post_id for item in payload["items"])
+    post_from_list = next(item for item in payload["items"] if item["id"] == post_id)
+    assert "authorId" not in post_from_list
+    assert "author" not in post_from_list
 
     delete_resp = await client.delete(f"/api/posts/{post_id}")
     assert delete_resp.status_code == 204
@@ -124,8 +131,8 @@ async def test_post_create_with_missing_interest_returns_404(client):
 
 
 async def test_post_update_is_open_for_mvp(client):
-    author_headers = await _auth_headers(client, "+70000000006")
-    post_id = await _create_post(client, author_headers, title="Чужой пост")
+    creator_headers = await _auth_headers(client, "+70000000006")
+    post_id = await _create_post(client, creator_headers, title="Чужой пост")
 
     resp = await client.patch(
         f"/api/posts/{post_id}",
@@ -136,8 +143,8 @@ async def test_post_update_is_open_for_mvp(client):
 
 
 async def test_post_delete_is_open_for_mvp(client):
-    author_headers = await _auth_headers(client, "+70000000008")
-    post_id = await _create_post(client, author_headers)
+    creator_headers = await _auth_headers(client, "+70000000008")
+    post_id = await _create_post(client, creator_headers)
 
     resp = await client.delete(f"/api/posts/{post_id}")
     assert resp.status_code == 204
@@ -160,10 +167,10 @@ async def test_post_interest_add_remove_cycle_open_for_mvp(client):
 
 
 async def test_posts_average_rating_is_calculated(client):
-    author_headers = await _auth_headers(client, "+70000000013")
+    creator_headers = await _auth_headers(client, "+70000000013")
     reviewer1_headers = await _auth_headers(client, "+70000000014")
     reviewer2_headers = await _auth_headers(client, "+70000000015")
-    post_id = await _create_post(client, author_headers, title="Пост с оценками")
+    post_id = await _create_post(client, creator_headers, title="Пост с оценками")
 
     r1 = await client.post(
         f"/api/posts/{post_id}/reviews",

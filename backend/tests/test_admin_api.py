@@ -10,6 +10,10 @@ async def _auth_headers(client, phone: str) -> dict[str, str]:
 async def test_admin_dashboard_is_open_for_mvp(client):
     resp = await client.get("/api/admin/dashboard")
     assert resp.status_code == 200
+    posts = resp.json().get("posts", [])
+    if posts:
+        assert "authorId" not in posts[0]
+        assert "author" not in posts[0]
 
 
 async def test_admin_can_edit_post_and_interest_set(client):

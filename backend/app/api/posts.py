@@ -14,11 +14,6 @@ from app.services.post_service import PostService
 router = APIRouter()
 
 
-class PostAuthorResponse(BasePydanticModel):
-    id: int
-    phone: str
-
-
 class PostCreateRequest(BasePydanticModel):
     mediaUrls: list[str] = Field(default_factory=list)
     title: str
@@ -41,7 +36,6 @@ class PostUpdateRequest(BasePydanticModel):
 
 class PostResponse(BasePydanticModel):
     id: int
-    authorId: int
     mediaUrls: list[str]
     title: str
     description: str | None
@@ -52,7 +46,6 @@ class PostResponse(BasePydanticModel):
     averageRating: float | None
     createdAt: datetime
     updatedAt: datetime
-    author: PostAuthorResponse
 
 
 class PostListResponse(BasePydanticModel):
@@ -69,7 +62,6 @@ def _service(db: AsyncSession) -> PostService:
 def _to_response(post: Post, average_rating: float | None = None) -> PostResponse:
     return PostResponse(
         id=post.id,
-        authorId=post.author_id,
         mediaUrls=list(post.media_urls or []),
         title=post.title,
         description=post.description,
@@ -82,7 +74,6 @@ def _to_response(post: Post, average_rating: float | None = None) -> PostRespons
         ),
         createdAt=post.created_at,
         updatedAt=post.updated_at,
-        author=PostAuthorResponse(id=post.author.id, phone=post.author.phone),
     )
 
 

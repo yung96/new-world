@@ -42,7 +42,6 @@ class AdminPostCard(BasePydanticModel):
     id: int
     title: str
     description: str | None
-    authorId: int
     interestIds: list[int]
     season: Season
     createdAt: datetime
@@ -308,7 +307,6 @@ async def admin_editor_page():
               <tr>
                 <th style="width: 70px;">ID</th>
                 <th>Название</th>
-                <th style="width: 80px;">Автор</th>
                 <th style="width: 90px;">Рейтинг</th>
                 <th style="width: 120px;">Действие</th>
               </tr>
@@ -429,7 +427,6 @@ async def admin_editor_page():
               <button class="post-title-btn" onclick="selectPost(${post.id})">${escapeHtml(post.title || 'Без названия')}</button>
               <div class="muted">season: ${escapeHtml(post.season || '-')}</div>
             </td>
-            <td>${post.authorId}</td>
             <td>${post.averageRating == null ? '-' : post.averageRating}</td>
             <td><button class="ghost" onclick="selectPost(${post.id})">Открыть</button></td>
           </tr>
@@ -682,7 +679,6 @@ async def get_admin_dashboard(
             id=post.id,
             title=post.title,
             description=post.description,
-            authorId=post.author_id,
             interestIds=[interest.id for interest in post.interests],
             season=post.season,
             createdAt=post.created_at,
@@ -777,7 +773,6 @@ async def admin_update_post(
         id=post.id,
         title=post.title,
         description=post.description,
-        authorId=post.author_id,
         interestIds=[interest.id for interest in post.interests],
         season=post.season,
         createdAt=post.created_at,
