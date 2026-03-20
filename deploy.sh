@@ -28,5 +28,7 @@ else
 fi
 
 # Сборка и запуск контейнеров
-docker compose down
+echo "Stopping old containers..."
+docker compose down --remove-orphans || true
+echo "Starting new containers..."
 docker compose up -d --build
