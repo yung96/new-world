@@ -10,12 +10,20 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     phone = Column(String, nullable=False, unique=True, index=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
 
-    achievements = relationship("Achievement", secondary=user_achievements, back_populates="users")
+    achievements = relationship(
+        "Achievement", secondary=user_achievements, back_populates="users"
+    )
     posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
-    reviews = relationship("Review", back_populates="author", cascade="all, delete-orphan")
-    interests = relationship("Interest", secondary=user_interests, back_populates="users")
+    reviews = relationship(
+        "Review", back_populates="author", cascade="all, delete-orphan"
+    )
+    interests = relationship(
+        "Interest", secondary=user_interests, back_populates="users"
+    )
 
     friends = relationship(
         "User",

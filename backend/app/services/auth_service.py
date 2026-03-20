@@ -12,13 +12,12 @@ class AuthService:
     def __init__(self, db_session: AsyncSession):
         self.db = db_session
 
-    async def login_and_get_token(self, phone: str) -> str:
-        normalized_phone = (phone or "").strip()
-        if not normalized_phone:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Phone number is required",
-            )
+
+    def normilize_phone(self, phone: str) -> str:
+        return phone.strip()
+
+    async def login(self, phone: str) -> str:
+        normalized_phone = self.normilize_phone(phone)
 
         user = await get_or_create_user(
             self.db,

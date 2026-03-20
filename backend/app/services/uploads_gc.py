@@ -23,7 +23,7 @@ async def cleanup_orphan_uploads(*, grace_period: timedelta) -> int:
             continue
         try:
             mtime = datetime.fromtimestamp(file_path.stat().st_mtime, tz=timezone.utc)
-        except Exception:
+        except Exception as e:
             continue
         if now - mtime < grace_period:
             continue
@@ -43,6 +43,6 @@ async def uploads_gc_loop(
             await cleanup_orphan_uploads(grace_period=grace)
         except asyncio.CancelledError:
             raise
-        except Exception:
+        except Exception as e:
             pass
         await asyncio.sleep(interval_seconds)

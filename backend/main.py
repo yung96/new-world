@@ -128,8 +128,8 @@ class MaintenanceModeMiddleware(BaseHTTPMiddleware):
                 status_code=503,
                 content={
                     "error": "maintenance",
-                    "message": "Technical maintenance in progress. Please try again later."
-                }
+                    "message": "Technical maintenance in progress. Please try again later.",
+                },
             )
         return await call_next(request)
 
@@ -169,4 +169,3 @@ api_router.include_router(posts.router, tags=["Posts"])
 api_router.include_router(reviews.router, tags=["Reviews"])
 api_router.include_router(uploads.router, tags=["Uploads"])
 fastapi_app.include_router(api_router)
-

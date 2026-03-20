@@ -1,8 +1,5 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
 
 import sys
@@ -10,7 +7,7 @@ import os
 
 # Добавляем корневую директорию проекта в sys.path
 # Это решает проблему 'ModuleNotFoundError' для 'app'
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.core.config import settings
 from app.models import Base
@@ -48,7 +45,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = settings.database_url.replace("asyncpg", "psycopg2")
+    url = settings.db_url.replace("asyncpg", "psycopg2")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -68,14 +65,12 @@ def run_migrations_online() -> None:
 
     """
     from sqlalchemy import create_engine
-    
-    sync_db_url = settings.database_url.replace("asyncpg", "psycopg2")
+
+    sync_db_url = settings.db_url.replace("asyncpg", "psycopg2")
     connectable = create_engine(sync_db_url)
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

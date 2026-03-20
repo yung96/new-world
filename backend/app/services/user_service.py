@@ -7,13 +7,12 @@ from app.models.user import User
 
 async def get_or_create_user(db_session: AsyncSession, *, phone: str) -> User:
     """Get user by phone or create one."""
-    normalized_phone = (phone or "").strip()
-    result = await db_session.execute(select(User).where(User.phone == normalized_phone))
+    result = await db_session.execute(select(User).where(User.phone == phone))
     user = result.scalar_one_or_none()
     if user is not None:
         return user
 
-    new_user = User(phone=normalized_phone)
+    new_user = User(phone=phone)
     db_session.add(new_user)
 
     try:
@@ -22,7 +21,7 @@ async def get_or_create_user(db_session: AsyncSession, *, phone: str) -> User:
         return new_user
     except IntegrityError:
         await db_session.rollback()
-        result = await db_session.execute(select(User).where(User.phone == normalized_phone))
+        result = await db_session.execute(select(User).where(User.phone == phone))
         user = result.scalar_one_or_none()
         if user is None:
             raise

@@ -1,3 +1,3 @@
-from . import auth, posts, reviews, social, uploads
+from . import auth, posts, reviews, social, uploads, base_schema
 
-__all__ = ["auth", "posts", "reviews", "social", "uploads"]
+__all__ = ["base_schema", "auth", "posts", "reviews", "social", "uploads"]

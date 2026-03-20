@@ -6,7 +6,7 @@ services:
     env_file:
       - ./backend/.env
     ports:
-        - "127.0.0.1:15432:5432"
+        - "15432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -22,7 +22,7 @@ services:
     container_name: kraeved_redis
     restart: unless-stopped
     ports:
-      - "127.0.0.1:16379:6379"
+      - "6380:6379"
     volumes:
       - redisdata:/data
     healthcheck:

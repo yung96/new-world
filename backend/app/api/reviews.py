@@ -1,9 +1,11 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, status
-from pydantic import BaseModel, Field
+from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+
+from app.api.base_schema import BasePydanticModel
 from app.api.auth import get_current_user
 from app.core.dependencies import get_db_session
 from app.models.review import Review
@@ -13,18 +15,18 @@ from app.services.review_service import ReviewService
 router = APIRouter()
 
 
-class ReviewAuthorResponse(BaseModel):
+class ReviewAuthorResponse(BasePydanticModel):
     id: int
     phone: str
 
 
-class ReviewCreateRequest(BaseModel):
+class ReviewCreateRequest(BasePydanticModel):
     rating: int = Field(ge=1, le=5)
     comment: str | None = None
     mediaUrls: list[str] = Field(default_factory=list)
 
 
-class ReviewResponse(BaseModel):
+class ReviewResponse(BasePydanticModel):
     id: int
     authorId: int
     postId: int
@@ -35,7 +37,7 @@ class ReviewResponse(BaseModel):
     author: ReviewAuthorResponse
 
 
-class ReviewListResponse(BaseModel):
+class ReviewListResponse(BasePydanticModel):
     items: list[ReviewResponse]
     total: int
     page: int
@@ -94,7 +96,9 @@ async def list_reviews(
     pageSize: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db_session),
 ):
-    reviews, total = await _service(db).list_reviews_by_post(post_id=post_id, page=page, page_size=pageSize)
+    reviews, total = await _service(db).list_reviews_by_post(
+        post_id=post_id, page=page, page_size=pageSize
+    )
     return ReviewListResponse(
         items=[_to_response(review) for review in reviews],
         total=total,

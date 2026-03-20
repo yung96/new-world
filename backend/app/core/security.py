@@ -20,15 +20,3 @@ def create_access_token(subject: Any) -> str:
         to_encode, settings.secret_key, algorithm=settings.algorithm
     )
     return encoded_jwt
-
-
-def verify_quiz_bot_token(token: str | None) -> bool:
-    """
-    Простая проверка сервисного токена бота квиза.
-    """
-    if not token:
-        return False
-    expected = settings.quiz_bot_api_token
-    if not expected:
-        return False
-    return hmac.compare_digest(token, expected)

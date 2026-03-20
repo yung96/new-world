@@ -4,8 +4,9 @@ import uuid
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from loguru import logger
 
+from app.api.base_schema import BasePydanticModel
 from app.core.config import settings
 
 router = APIRouter()
@@ -17,7 +18,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
 
-class UploadResponse(BaseModel):
+class UploadResponse(BasePydanticModel):
     url: str
     filename: str
 
@@ -36,7 +37,8 @@ def extract_uploaded_filename(file_url: str) -> str | None:
     try:
         parsed = urlparse(file_url)
         path = parsed.path or file_url
-    except Exception:
+    except Exception as e:
+        logger.warning(e)
         path = file_url
 
     marker = "/api/uploads/"
@@ -59,7 +61,8 @@ def delete_uploaded_file(file_url: str | None) -> None:
     try:
         if file_path.exists() and file_path.is_file():
             file_path.unlink()
-    except Exception:
+    except Exception as e:
+        logger.warning(e)
         pass
 
 
@@ -97,8 +100,8 @@ async def upload_image_file(file: UploadFile = File(...)):
     try:
         with file_path.open("wb") as f:
             f.write(contents)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to save file: {exc}") from exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {e}") from e
 
     return UploadResponse(url=f"/api/uploads/{unique_name}", filename=unique_name)
 

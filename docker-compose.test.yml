@@ -9,9 +9,9 @@ services:
     environment:
       # Важно: не используем ${...} подстановки на уровне compose,
       # чтобы можно было запускать без `--env-file .env.test`.
-      POSTGRES_DB: db_test
-      POSTGRES_USER: user_test
-      POSTGRES_PASSWORD: password_test
+      DB_HOST: db_test
+      DB_USER: user_test
+      DB_PASS: password_test
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck:

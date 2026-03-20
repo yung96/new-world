@@ -11,7 +11,6 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-
 # revision identifiers, used by Alembic.
 revision: str = "001"
 down_revision: Union[str, Sequence[str], None] = None
@@ -48,7 +47,12 @@ def upgrade() -> None:
         "users",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("phone", sa.String(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_users_phone"), "users", ["phone"], unique=True)
@@ -58,7 +62,12 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name"),
     )
@@ -67,7 +76,12 @@ def upgrade() -> None:
         "interests",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name"),
     )
@@ -98,8 +112,18 @@ def upgrade() -> None:
             season_enum,
             nullable=False,
         ),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["author_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -118,13 +142,20 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("'[]'::jsonb"),
         ),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.CheckConstraint("rating >= 1 AND rating <= 5", name="ck_reviews_rating_1_5"),
         sa.ForeignKeyConstraint(["author_id"], ["users.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["post_id"], ["posts.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_reviews_author_id"), "reviews", ["author_id"], unique=False)
+    op.create_index(
+        op.f("ix_reviews_author_id"), "reviews", ["author_id"], unique=False
+    )
     op.create_index(op.f("ix_reviews_post_id"), "reviews", ["post_id"], unique=False)
 
     op.create_table(
@@ -138,21 +169,45 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("'pending'"),
         ),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["receiver_id"], ["users.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["requester_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("requester_id", "receiver_id", name="uq_friend_request_pair"),
+        sa.UniqueConstraint(
+            "requester_id", "receiver_id", name="uq_friend_request_pair"
+        ),
     )
-    op.create_index(op.f("ix_friend_requests_requester_id"), "friend_requests", ["requester_id"], unique=False)
-    op.create_index(op.f("ix_friend_requests_receiver_id"), "friend_requests", ["receiver_id"], unique=False)
+    op.create_index(
+        op.f("ix_friend_requests_requester_id"),
+        "friend_requests",
+        ["requester_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_friend_requests_receiver_id"),
+        "friend_requests",
+        ["receiver_id"],
+        unique=False,
+    )
 
     op.create_table(
         "user_achievements",
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("achievement_id", sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(["achievement_id"], ["achievements.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["achievement_id"], ["achievements.id"], ondelete="CASCADE"
+        ),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("user_id", "achievement_id"),
     )

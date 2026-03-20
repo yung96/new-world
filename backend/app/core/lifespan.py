@@ -7,11 +7,12 @@ from app.core.config import settings
 from app.db import engine, async_session_factory
 from app.models import Base
 from app.services.uploads_gc import uploads_gc_loop
+from loguru import logger
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Запуск контекстного менеджера")
+    logger.info("Запуск контекстного менеджера")
 
     # Инициализируем схему БД, если миграции/таблицы ещё не применены.
     async with engine.begin() as conn:
@@ -49,7 +50,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    print("Приложение останавливается...")
+    logger.info("Приложение останавливается...")
 
     task = getattr(app.state, "uploads_gc_task", None)
     if task is not None:
