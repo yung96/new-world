@@ -178,7 +178,7 @@ async def add_interests(
     interests = await _service(db).get_interests_by_user(user_id=_current_user.id)
     return PaginatedInterestsResponse(
         items=[_interest_to_response(item) for item in interests],
-        total=total,
+        total=100,
         page=1,
         pageSize=100,
     )
