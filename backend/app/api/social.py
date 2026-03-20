@@ -11,6 +11,7 @@ from app.models.friend_request import FriendRequest, FriendRequestStatus
 from app.models.interest import Interest
 from app.models.user import User
 from app.services.social_service import SocialService
+from slugify import slugify
 
 router = APIRouter()
 
@@ -27,6 +28,7 @@ class InterestRequest(BasePydanticModel):
 class InterestResponse(BasePydanticModel):
     id: int
     name: str
+    name_en: str
 
 
 class AchievementRequest(BasePydanticModel):
@@ -86,7 +88,15 @@ def _service(db: AsyncSession) -> SocialService:
 
 
 def _interest_to_response(item: Interest) -> InterestResponse:
-    return InterestResponse(id=item.id, name=item.name)
+    return InterestResponse(
+        id=item.id,
+        name=item.name,
+        name_en=slugify(
+            f"{item.name}",
+            separator="_",
+            allow_unicode=False,
+        ),
+    )
 
 
 def _achievement_to_response(item: Achievement) -> AchievementResponse:
@@ -134,6 +144,24 @@ async def list_interests(
         total=total,
         page=page,
         pageSize=pageSize,
+    )
+
+
+@router.post("/interests/bulk_create", response_model=PaginatedInterestsResponse)
+async def add_interests(
+    interest_ids: list[int] = ...,
+    _current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    items, total = await _service(db).add_interests_to_user(
+        user=_current_user,
+        interest_ids=interest_ids,
+    )
+    return PaginatedInterestsResponse(
+        items=[_interest_to_response(item) for item in items],
+        total=total,
+        page=1,
+        pageSize=100,
     )
 
 
