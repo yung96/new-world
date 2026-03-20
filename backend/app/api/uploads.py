@@ -63,7 +63,16 @@ def delete_uploaded_file(file_url: str | None) -> None:
         pass
 
 
-@router.post("/upload", response_model=UploadResponse)
+@router.post(
+    "/upload",
+    response_model=UploadResponse,
+    summary="Загрузить изображение",
+    description=(
+        "Загружает файл изображения на сервер.\n\n"
+        "Поддерживаемые расширения: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`."
+    ),
+    response_description="URL и имя сохраненного файла.",
+)
 async def upload_image_file(file: UploadFile = File(...)):
     ext = Path(file.filename or "").suffix.lower()
     if ext not in ALLOWED_EXTENSIONS:
@@ -94,7 +103,12 @@ async def upload_image_file(file: UploadFile = File(...)):
     return UploadResponse(url=f"/api/uploads/{unique_name}", filename=unique_name)
 
 
-@router.get("/uploads/{filename}")
+@router.get(
+    "/uploads/{filename}",
+    summary="Получить загруженный файл",
+    description="Возвращает ранее загруженный файл по его имени.",
+    response_description="Бинарное содержимое файла.",
+)
 async def get_uploaded_file(filename: str):
     file_path = _safe_file_path(filename)
     if file_path is None or not file_path.exists() or not file_path.is_file():

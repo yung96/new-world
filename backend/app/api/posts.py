@@ -87,7 +87,13 @@ def _to_response(post: Post, average_rating: float | None = None) -> PostRespons
     )
 
 
-@router.post("/posts", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/posts",
+    response_model=PostResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Создать пост",
+    description="Создает новый пост от имени текущего пользователя.",
+)
 async def create_post(
     payload: PostCreateRequest,
     current_user: User = Depends(get_current_user),
@@ -108,7 +114,12 @@ async def create_post(
     return _to_response(post, avg_rating)
 
 
-@router.get("/posts", response_model=PostListResponse)
+@router.get(
+    "/posts",
+    response_model=PostListResponse,
+    summary="Список постов",
+    description="Возвращает список постов с пагинацией.",
+)
 async def list_posts(
     page: int = Query(default=1, ge=1),
     pageSize: int = Query(default=20, ge=1, le=100),
@@ -119,13 +130,23 @@ async def list_posts(
     return PostListResponse(items=items, total=total, page=page, pageSize=pageSize)
 
 
-@router.get("/posts/{post_id}", response_model=PostResponse)
+@router.get(
+    "/posts/{post_id}",
+    response_model=PostResponse,
+    summary="Получить пост",
+    description="Возвращает один пост по его идентификатору.",
+)
 async def get_post(post_id: int, db: AsyncSession = Depends(get_db_session)):
     post, avg_rating = await _service(db).get_post_or_404(post_id)
     return _to_response(post, avg_rating)
 
 
-@router.patch("/posts/{post_id}", response_model=PostResponse)
+@router.patch(
+    "/posts/{post_id}",
+    response_model=PostResponse,
+    summary="Обновить пост",
+    description="Частично обновляет пост. Доступно только автору поста.",
+)
 async def update_post(
     post_id: int,
     payload: PostUpdateRequest,
@@ -148,7 +169,12 @@ async def update_post(
     return _to_response(post, avg_rating)
 
 
-@router.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/posts/{post_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Удалить пост",
+    description="Удаляет пост. Доступно только автору поста.",
+)
 async def delete_post(
     post_id: int,
     current_user: User = Depends(get_current_user),
@@ -157,7 +183,12 @@ async def delete_post(
     await _service(db).delete_post(actor=current_user, post_id=post_id)
 
 
-@router.post("/posts/{post_id}/interests/{interest_id}", response_model=PostResponse)
+@router.post(
+    "/posts/{post_id}/interests/{interest_id}",
+    response_model=PostResponse,
+    summary="Добавить интерес к посту",
+    description="Привязывает интерес к посту. Доступно только автору поста.",
+)
 async def add_interest_to_post(
     post_id: int,
     interest_id: int,
@@ -169,7 +200,12 @@ async def add_interest_to_post(
     return _to_response(post, avg_rating)
 
 
-@router.delete("/posts/{post_id}/interests/{interest_id}", response_model=PostResponse)
+@router.delete(
+    "/posts/{post_id}/interests/{interest_id}",
+    response_model=PostResponse,
+    summary="Убрать интерес из поста",
+    description="Удаляет привязку интереса к посту. Доступно только автору поста.",
+)
 async def remove_interest_from_post(
     post_id: int,
     interest_id: int,
