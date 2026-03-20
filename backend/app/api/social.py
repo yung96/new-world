@@ -171,12 +171,13 @@ async def add_interests(
     _current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    items, total = await _service(db).add_interests_to_user(
+    await _service(db).add_interests_to_user(
         user=_current_user,
         interest_ids=interest_ids,
     )
+    interests = await _service(db).get_interests_by_user(user_id=_current_user.id)
     return PaginatedInterestsResponse(
-        items=[_interest_to_response(item) for item in items],
+        items=[_interest_to_response(item) for item in interests],
         total=total,
         page=1,
         pageSize=100,
@@ -203,12 +204,13 @@ async def generate_interests(
         response_model=GeneratedInterest,
     )
 
-    items, total = await _service(db).add_interests_to_user(
+    await _service(db).add_interests_to_user(
         user=_current_user,
         interest_ids=generated_interests.ids,
     )
+    interests = await _service(db).get_interests_by_user(user_id=_current_user.id)
     return PaginatedInterestsResponse(
-        items=[_interest_to_response(item) for item in items],
+        items=[_interest_to_response(item) for item in interests],
         total=total,
         page=1,
         pageSize=100,

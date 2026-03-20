@@ -104,8 +104,18 @@ class SocialService:
         return user
 
     async def get_interests_by_user(self, user_id: int) -> list[Interest]:
-        # NOTE: далее понадобится.
-        ...
+        stmt = (
+            select(Interest)
+            .join(
+                user_interests,
+                user_interests.c.interest_id == Interest.id,
+            )
+            .where(user_interests.c.user_id == user_id)
+            .order_by(user_interests.c.weight.desc())
+        )
+
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
 
     async def add_interests_to_user(
         self,
