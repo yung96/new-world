@@ -408,7 +408,7 @@ async def admin_editor_page():
             <div class="muted">${new Date(item.createdAt).toLocaleString()}</div>
           </div>
           <div class="toolbar">
-            <button class="ghost" onclick="renameInterestPrompt(${item.id}, '${escapeJs(item.name)}')">Переименовать</button>
+            <button class="ghost" onclick="renameInterestPrompt(${item.id})">Переименовать</button>
             <button class="danger" onclick="deleteInterest(${item.id})">Удалить</button>
           </div>
         </div>
@@ -523,7 +523,9 @@ async def admin_editor_page():
       }
     }
 
-    async function renameInterestPrompt(id, oldName) {
+    async function renameInterestPrompt(id) {
+      const item = state.interests.find((interest) => interest.id === id);
+      const oldName = item?.name || '';
       const name = window.prompt('Новое имя интереса:', oldName);
       if (!name) return;
       try {
@@ -554,10 +556,6 @@ async def admin_editor_page():
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
-    }
-
-    function escapeJs(value) {
-      return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     }
 
     window.loadDashboard = loadDashboard;
