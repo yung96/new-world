@@ -2,7 +2,8 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import Field
+
+from pydantic import ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.base_schema import BasePydanticModel
@@ -13,11 +14,13 @@ from app.services.auth_service import AuthService
 
 # --- Схемы (DTOs) ---
 
+
 class LoginData(BasePydanticModel):
     phone: str = Field(
         ...,
         description="Номер телефона пользователя (например `+79991234567`).",
         examples=["+79991234567"],
+        pattern=r"^\+7\d{10}$",
     )
 
 
@@ -25,10 +28,13 @@ class Token(BasePydanticModel):
     access_token: str = Field(..., description="JWT токен доступа.")
     token_type: str = Field(default="bearer", description="Тип токена.")
 
+
 class UserData(BasePydanticModel):
     id: int = Field(..., description="Уникальный идентификатор пользователя.")
     phone: str = Field(..., description="Телефон пользователя.")
-    created_at: datetime = Field(..., description="Дата и время регистрации пользователя.")
+    created_at: datetime = Field(
+        ..., description="Дата и время регистрации пользователя."
+    )
 
 
 # --- Настройка FastAPI ---

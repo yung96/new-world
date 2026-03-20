@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.interest import Interest
-from app.models.post import Post
+from app.models.post import Post, Season
 from app.models.review import Review
 from app.models.user import User
 
@@ -24,7 +24,7 @@ class PostService:
         geo_lat: float | None,
         geo_lng: float | None,
         media_urls: list[str],
-        tags: list[str],
+        season: Season,
         interest_ids: list[int],
     ) -> Post:
         interests = await self._load_interests(interest_ids)
@@ -35,7 +35,7 @@ class PostService:
             geo_lat=geo_lat,
             geo_lng=geo_lng,
             media_urls=media_urls,
-            tags=tags,
+            season=season,
             interests=interests,
         )
         self.db.add(post)
@@ -99,7 +99,7 @@ class PostService:
         geo_lat: float | None = None,
         geo_lng: float | None = None,
         media_urls: list[str] | None = None,
-        tags: list[str] | None = None,
+        season: Season | None = None,
         interest_ids: list[int] | None = None,
     ) -> Post:
         post, _ = await self.get_post_or_404(post_id)
@@ -116,8 +116,8 @@ class PostService:
             post.geo_lng = geo_lng
         if media_urls is not None:
             post.media_urls = media_urls
-        if tags is not None:
-            post.tags = tags
+        if season is not None:
+            post.season = season
         if interest_ids is not None:
             post.interests = await self._load_interests(interest_ids)
 
@@ -142,7 +142,7 @@ class PostService:
         geo_lat: float | None = None,
         geo_lng: float | None = None,
         media_urls: list[str] | None = None,
-        tags: list[str] | None = None,
+        season: Season | None = None,
         interest_ids: list[int] | None = None,
     ) -> Post:
         post, _ = await self.get_post_or_404(post_id)
@@ -157,8 +157,8 @@ class PostService:
             post.geo_lng = geo_lng
         if media_urls is not None:
             post.media_urls = media_urls
-        if tags is not None:
-            post.tags = tags
+        if season is not None:
+            post.season = season
         if interest_ids is not None:
             post.interests = await self._load_interests(interest_ids)
 

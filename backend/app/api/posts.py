@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.base_schema import BasePydanticModel
 from app.api.auth import get_current_user
 from app.core.dependencies import get_db_session
-from app.models.post import Post
+from app.models.post import Post, Season
 from app.models.user import User
 from app.services.post_service import PostService
 
@@ -26,7 +26,7 @@ class PostCreateRequest(BasePydanticModel):
     geoLat: float | None = Field(default=None, ge=-90, le=90)
     geoLng: float | None = Field(default=None, ge=-180, le=180)
     interestIds: list[int] = Field(default_factory=list)
-    tags: list[str] = Field(default_factory=list)
+    season: Season
 
 
 class PostUpdateRequest(BasePydanticModel):
@@ -36,7 +36,7 @@ class PostUpdateRequest(BasePydanticModel):
     geoLat: float | None = Field(default=None, ge=-90, le=90)
     geoLng: float | None = Field(default=None, ge=-180, le=180)
     interestIds: list[int] | None = None
-    tags: list[str] | None = None
+    season: Season | None = None
 
 
 class PostResponse(BasePydanticModel):
@@ -48,7 +48,7 @@ class PostResponse(BasePydanticModel):
     geoLat: float | None
     geoLng: float | None
     interestIds: list[int]
-    tags: list[str]
+    season: Season
     averageRating: float | None
     createdAt: datetime
     updatedAt: datetime
@@ -76,7 +76,7 @@ def _to_response(post: Post, average_rating: float | None = None) -> PostRespons
         geoLat=post.geo_lat,
         geoLng=post.geo_lng,
         interestIds=[interest.id for interest in post.interests],
-        tags=list(post.tags or []),
+        season=post.season,
         averageRating=(
             round(float(average_rating), 2) if average_rating is not None else None
         ),
@@ -105,7 +105,7 @@ async def create_post(
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,
         media_urls=payload.mediaUrls,
-        tags=payload.tags,
+        season=payload.season,
         interest_ids=payload.interestIds,
     )
     post, avg_rating = await _service(db).get_post_or_404(created.id)
@@ -157,7 +157,7 @@ async def update_post(
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,
         media_urls=payload.mediaUrls,
-        tags=payload.tags,
+        season=payload.season,
         interest_ids=payload.interestIds,
     )
     post, avg_rating = await _service(db).get_post_or_404(updated.id)

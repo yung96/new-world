@@ -1,3 +1,6 @@
+from app.models.post import Season
+
+
 async def _auth_headers(client, phone: str) -> dict[str, str]:
     resp = await client.post("/api/auth", json={"phone": phone})
     assert resp.status_code == 200
@@ -28,7 +31,7 @@ async def test_admin_can_edit_post_and_interest_set(client):
             "geoLat": 55.75,
             "geoLng": 37.61,
             "interestIds": [interest_id],
-            "tags": ["old"],
+            "season": Season.spring,
         },
         headers=user_headers,
     )
@@ -48,7 +51,7 @@ async def test_admin_can_edit_post_and_interest_set(client):
             "title": "Новое место",
             "description": "описание admin",
             "interestIds": [new_interest_id],
-            "tags": ["edited"],
+            "season": Season.spring,
         },
     )
     assert patch_resp.status_code == 200

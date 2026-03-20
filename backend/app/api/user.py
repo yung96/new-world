@@ -33,7 +33,7 @@ async def user_create_post(
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,
         media_urls=payload.mediaUrls,
-        tags=payload.tags,
+        season=payload.season,
         interest_ids=payload.interestIds,
     )
     post, avg_rating = await _service(db).get_post_or_404(created.id)
@@ -46,7 +46,7 @@ async def user_create_post(
         geoLat=post.geo_lat,
         geoLng=post.geo_lng,
         interestIds=[interest.id for interest in post.interests],
-        tags=list(post.tags or []),
+        season=post.season,
         averageRating=(round(float(avg_rating), 2) if avg_rating is not None else None),
         createdAt=post.created_at,
         updatedAt=post.updated_at,
