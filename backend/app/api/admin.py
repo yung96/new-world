@@ -34,7 +34,7 @@ class AdminInterestUpdateRequest(BasePydanticModel):
 
 class AdminInterestCreateRequest(BasePydanticModel):
     name: str
-    emoji: str
+    emoji: str | None = None
 
 
 class AdminPostCard(BasePydanticModel):
@@ -770,7 +770,7 @@ async def admin_update_post(
         description=post.description,
         authorId=post.author_id,
         interestIds=[interest.id for interest in post.interests],
-        tags=list(post.tags or []),
+        season=post.season,
         createdAt=post.created_at,
         updatedAt=post.updated_at,
         averageRating=(round(float(avg_rating), 2) if avg_rating is not None else None),

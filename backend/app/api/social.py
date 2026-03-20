@@ -1,4 +1,6 @@
 from datetime import datetime
+import re
+import unicodedata
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +13,6 @@ from app.models.friend_request import FriendRequest, FriendRequestStatus
 from app.models.interest import Interest
 from app.models.user import User
 from app.services.social_service import SocialService
-from slugify import slugify
 
 router = APIRouter()
 
@@ -23,7 +24,7 @@ class UserCompactResponse(BasePydanticModel):
 
 class InterestRequest(BasePydanticModel):
     name: str
-    emoji: str
+    emoji: str | None = None
 
 
 class InterestResponse(BasePydanticModel):
@@ -90,15 +91,20 @@ def _service(db: AsyncSession) -> SocialService:
 
 
 def _interest_to_response(item: Interest) -> InterestResponse:
+    slug = (
+        unicodedata.normalize("NFKD", item.name)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+        .lower()
+    )
+    slug = re.sub(r"[^a-z0-9]+", "_", slug).strip("_")
+    if not slug:
+        slug = f"interest_{item.id}"
     return InterestResponse(
         id=item.id,
         name=item.name,
-        name_en=slugify(
-            f"{item.name}",
-            separator="_",
-            allow_unicode=False,
-        ),
-        emoji=item.emoji,
+        name_en=slug,
+        emoji=item.emoji or "",
     )
 
 

@@ -109,7 +109,7 @@ async def list_favorites(
             geoLat=post.geo_lat,
             geoLng=post.geo_lng,
             interestIds=[interest.id for interest in post.interests],
-            tags=list(post.tags or []),
+            season=post.season,
             averageRating=(
                 round(float(avg_rating), 2) if avg_rating is not None else None
             ),

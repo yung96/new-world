@@ -19,16 +19,17 @@ class SocialService:
             raise HTTPException(status_code=404, detail="User not found")
         return user
 
-    async def create_interest(self, name: str, emoji: str) -> Interest:
+    async def create_interest(self, name: str, emoji: str | None = None) -> Interest:
         normalized = (name or "").strip()
         if not normalized:
             raise HTTPException(status_code=400, detail="Interest name is required")
+        normalized_emoji = (emoji or "").strip() or "🪁"
         exists = (
             await self.db.execute(select(Interest).where(Interest.name == normalized))
         ).scalar_one_or_none()
         if exists is not None:
             return exists
-        interest = Interest(name=normalized, emoji=emoji)
+        interest = Interest(name=normalized, emoji=normalized_emoji)
         self.db.add(interest)
         await self.db.commit()
         await self.db.refresh(interest)

@@ -26,7 +26,7 @@ class PostCreateRequest(BasePydanticModel):
     geoLat: float | None = Field(default=None, ge=-90, le=90)
     geoLng: float | None = Field(default=None, ge=-180, le=180)
     interestIds: list[int] = Field(default_factory=list)
-    season: Season
+    season: Season = Season.spring
 
 
 class PostUpdateRequest(BasePydanticModel):
