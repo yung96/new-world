@@ -8,8 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.base_schema import BasePydanticModel
 from app.core.dependencies import get_db_session
+from app.models.associations import user_interests
 from app.models.interest import Interest
 from app.models.post import Post
+from app.models.user import User
 from app.services.post_service import PostService
 from app.services.social_service import SocialService
 
@@ -55,16 +57,33 @@ class AdminInterestCard(BasePydanticModel):
 class AdminDashboardStats(BasePydanticModel):
     totalPosts: int
     totalInterests: int
+    totalUsers: int
+
+
+class AdminUserInterest(BasePydanticModel):
+    id: int
+    name: str
+    weight: int
+
+
+class AdminUserCard(BasePydanticModel):
+    id: int
+    phone: str
+    createdAt: datetime
+    interests: list[AdminUserInterest]
 
 
 class AdminDashboardResponse(BasePydanticModel):
     stats: AdminDashboardStats
     posts: list[AdminPostCard]
     interests: list[AdminInterestCard]
+    users: list[AdminUserCard]
     postsPage: int
     postsPageSize: int
     interestsPage: int
     interestsPageSize: int
+    usersPage: int
+    usersPageSize: int
 
 
 def _post_service(db: AsyncSession) -> PostService:
@@ -162,7 +181,7 @@ async def admin_editor_page():
     }
     .stats {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
     }
     .stat {
@@ -230,6 +249,17 @@ async def admin_editor_page():
       border-bottom: 1px solid var(--line);
     }
     .list-item:last-child { border-bottom: 0; }
+    .user-interest {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      margin: 2px 6px 2px 0;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+    }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .col-gap { display: flex; flex-direction: column; gap: 8px; }
     .status {
@@ -254,11 +284,12 @@ async def admin_editor_page():
         <p class="muted">Удобное управление местами и интересами для MVP.</p>
         <div class="toolbar" style="margin-top: 10px;">
           <button class="primary" onclick="loadDashboard()">Обновить данные</button>
-          <span class="muted">Посты: page=<span id="postsPageInfo">1</span>, Интереcы: page=<span id="interestsPageInfo">1</span></span>
+          <span class="muted">Посты: page=<span id="postsPageInfo">1</span>, Интересы: page=<span id="interestsPageInfo">1</span>, Юзеры: page=<span id="usersPageInfo">1</span></span>
         </div>
         <div class="stats" style="margin-top: 10px;">
           <div class="stat"><strong id="statPosts">0</strong><span class="muted">Мест</span></div>
           <div class="stat"><strong id="statInterests">0</strong><span class="muted">Интересов</span></div>
+          <div class="stat"><strong id="statUsers">0</strong><span class="muted">Пользователей</span></div>
           <div class="stat"><strong id="statLoaded">0</strong><span class="muted">Загружено в таблицу</span></div>
         </div>
       </div>
@@ -316,6 +347,11 @@ async def admin_editor_page():
       </div>
 
       <div class="card">
+        <h2>Пользователи и их веса интересов</h2>
+        <div class="list" id="usersList"></div>
+      </div>
+
+      <div class="card">
         <h2>Лог</h2>
         <div id="status" class="status">Готово к работе.</div>
       </div>
@@ -326,6 +362,7 @@ async def admin_editor_page():
     const state = {
       posts: [],
       interests: [],
+      users: [],
       selectedPostId: null,
       selectedInterestIds: new Set(),
     };
@@ -362,9 +399,11 @@ async def admin_editor_page():
     function renderStats(payload) {
       byId('statPosts').textContent = String(payload.stats.totalPosts || 0);
       byId('statInterests').textContent = String(payload.stats.totalInterests || 0);
+      byId('statUsers').textContent = String(payload.stats.totalUsers || 0);
       byId('statLoaded').textContent = String(payload.posts.length || 0);
       byId('postsPageInfo').textContent = String(payload.postsPage);
       byId('interestsPageInfo').textContent = String(payload.interestsPage);
+      byId('usersPageInfo').textContent = String(payload.usersPage);
     }
 
     function renderPostRows() {
@@ -415,6 +454,24 @@ async def admin_editor_page():
       `).join('') || '<div class="list-item"><span class="muted">Нет интересов на этой странице.</span></div>';
     }
 
+    function renderUsersList() {
+      const list = byId('usersList');
+      list.innerHTML = state.users.map((user) => {
+        const interests = (user.interests || []).map((interest) =>
+          `<span class="user-interest">${escapeHtml(interest.name)} · w=${interest.weight}</span>`
+        ).join('');
+        return `
+          <div class="list-item">
+            <div>
+              <strong>#${user.id}</strong> ${escapeHtml(user.phone)}
+              <div class="muted">${new Date(user.createdAt).toLocaleString()}</div>
+              <div style="margin-top: 4px;">${interests || '<span class="muted">Нет интересов</span>'}</div>
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="list-item"><span class="muted">Нет пользователей на этой странице.</span></div>';
+    }
+
     function selectPost(postId) {
       const post = state.posts.find((p) => p.id === postId);
       if (!post) return;
@@ -444,9 +501,11 @@ async def admin_editor_page():
         const payload = await api('/api/admin/dashboard');
         state.posts = payload.posts || [];
         state.interests = payload.interests || [];
+        state.users = payload.users || [];
         renderStats(payload);
         renderPostRows();
         renderInterestsList();
+        renderUsersList();
         renderInterestChips();
 
         if (state.posts.length && state.selectedPostId == null) {
@@ -581,12 +640,20 @@ async def get_admin_dashboard(
     postsPageSize: int = Query(default=20, ge=1, le=100),
     interestsPage: int = Query(default=1, ge=1),
     interestsPageSize: int = Query(default=50, ge=1, le=100),
+    usersPage: int = Query(default=1, ge=1),
+    usersPageSize: int = Query(default=50, ge=1, le=100),
     db: AsyncSession = Depends(get_db_session),
 ):
     post_rows, _ = await _post_service(db).list_posts(page=postsPage, page_size=postsPageSize)
     interests, _ = await _social_service(db).list_interests(
         page=interestsPage, page_size=interestsPageSize
     )
+    users_offset = (usersPage - 1) * usersPageSize
+    users = (
+        await db.execute(
+            select(User).order_by(User.id.asc()).offset(users_offset).limit(usersPageSize)
+        )
+    ).scalars().all()
 
     posts = [
         AdminPostCard(
@@ -606,19 +673,57 @@ async def get_admin_dashboard(
         AdminInterestCard(id=item.id, name=item.name, createdAt=item.created_at)
         for item in interests
     ]
+    user_ids = [item.id for item in users]
+    interest_rows = []
+    if user_ids:
+        interest_rows = (
+            await db.execute(
+                select(
+                    user_interests.c.user_id,
+                    user_interests.c.interest_id,
+                    user_interests.c.weight,
+                    Interest.name,
+                )
+                .join(Interest, Interest.id == user_interests.c.interest_id)
+                .where(user_interests.c.user_id.in_(user_ids))
+                .order_by(user_interests.c.user_id.asc(), Interest.name.asc())
+            )
+        ).all()
+
+    interests_by_user: dict[int, list[AdminUserInterest]] = {}
+    for row in interest_rows:
+        interests_by_user.setdefault(row.user_id, []).append(
+            AdminUserInterest(id=row.interest_id, name=row.name, weight=row.weight)
+        )
+
+    user_cards = [
+        AdminUserCard(
+            id=item.id,
+            phone=item.phone,
+            createdAt=item.created_at,
+            interests=interests_by_user.get(item.id, []),
+        )
+        for item in users
+    ]
     total_posts = int((await db.execute(select(func.count(Post.id)))).scalar_one() or 0)
     total_interests = int(
         (await db.execute(select(func.count(Interest.id)))).scalar_one() or 0
     )
+    total_users = int((await db.execute(select(func.count(User.id)))).scalar_one() or 0)
 
     return AdminDashboardResponse(
-        stats=AdminDashboardStats(totalPosts=total_posts, totalInterests=total_interests),
+        stats=AdminDashboardStats(
+            totalPosts=total_posts, totalInterests=total_interests, totalUsers=total_users
+        ),
         posts=posts,
         interests=interest_cards,
+        users=user_cards,
         postsPage=postsPage,
         postsPageSize=postsPageSize,
         interestsPage=interestsPage,
         interestsPageSize=interestsPageSize,
+        usersPage=usersPage,
+        usersPageSize=usersPageSize,
     )
 
 
