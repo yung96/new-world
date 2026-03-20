@@ -127,7 +127,7 @@ export function FeedPage() {
                       favoriteIds.has(post.id) ? 'font-semibold text-amber-600' : 'text-zinc-600'
                     }`}
                   >
-                    {favoriteIds.has(post.id) ? 'saved' : 'save'}
+                    {favoriteIds.has(post.id) ? 'В избранном' : 'В избранное'}
                   </button>
                 ) : null}
               </div>

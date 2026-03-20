@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useSessionStore } from '../app/store/sessionStore'
 import { authApi, favoritesApi } from '../shared/api/endpoints'
@@ -7,6 +7,7 @@ import { formatDateTime } from '../shared/lib/format'
 import { normalizeError } from '../shared/lib/errors'
 
 export function ProfilePage() {
+  const queryClient = useQueryClient()
   const user = useSessionStore((state) => state.user)
   const token = useSessionStore((state) => state.token)
   const setUser = useSessionStore((state) => state.setUser)
@@ -27,6 +28,12 @@ export function ProfilePage() {
     queryKey: ['favorites', 'profile'],
     queryFn: () => favoritesApi.list({ page: 1, pageSize: 50 }),
     enabled: Boolean(token),
+  })
+  const removeFavoriteMutation = useMutation({
+    mutationFn: (postId) => favoritesApi.remove(postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites'] })
+    },
   })
 
   return (
@@ -81,9 +88,18 @@ export function ProfilePage() {
             <div key={post.id} className="rounded-xl border border-zinc-200 p-3">
               <p className="text-sm font-semibold">{post.title}</p>
               <p className="text-xs text-zinc-500">#{post.id}</p>
-              <Link to={`/posts/${post.id}`} className="mt-2 inline-block text-xs text-indigo-700">
-                Открыть
-              </Link>
+              <div className="mt-2 flex items-center gap-3">
+                <Link to={`/posts/${post.id}`} className="inline-block text-xs text-indigo-700">
+                  Открыть
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => removeFavoriteMutation.mutate(post.id)}
+                  className="text-xs text-rose-700"
+                >
+                  Убрать из избранного
+                </button>
+              </div>
             </div>
           ))}
           {!favoritesQuery.isLoading && !favoritesQuery.data?.items?.length ? (
