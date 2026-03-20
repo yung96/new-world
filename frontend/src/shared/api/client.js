@@ -42,7 +42,7 @@ export const request = async (path, options = {}) => {
   const url = `${API_BASE_URL}${withQueryParams(path, query)}`
   const requestHeaders = { ...headers }
 
-  if (!rawBody) {
+  if (!rawBody && body !== undefined && body !== null) {
     requestHeaders['Content-Type'] = 'application/json'
   }
 

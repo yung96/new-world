@@ -14,16 +14,38 @@ class Settings(BaseSettings):
     """
 
     # База данных
-    DB_USER: str
-    DB_PASS: str
-    DB_HOST: str
-    DB_PORT: int
-    DB_NAME: str
+    DB_USER: str | None = None
+    DB_PASS: str | None = None
+    DB_HOST: str | None = None
+    DB_PORT: int | None = None
+    DB_NAME: str | None = None
+    database_url: str | None = Field(
+        default=None,
+        description="Полный URL БД (приоритетный источник, напр. DATABASE_URL)",
+    )
 
     @computed_field
     @property
     def db_url(self) -> str:
-        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        if self.database_url:
+            return self.database_url
+
+        user = self.DB_USER or self.POSTGRES_USER
+        password = self.DB_PASS or self.POSTGRES_PASSWORD
+        host = self.DB_HOST or "localhost"
+        port = self.DB_PORT or 5432
+        name = self.DB_NAME or self.POSTGRES_DB
+
+        if not all([user, password, name]):
+            raise ValueError(
+                "Database config is incomplete. Set DATABASE_URL or DB_* (or POSTGRES_* pair with host/port)."
+            )
+        return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{name}"
+
+    # Совместимость с docker-compose, где обычно задаются POSTGRES_*
+    POSTGRES_USER: str | None = None
+    POSTGRES_PASSWORD: str | None = None
+    POSTGRES_DB: str | None = None
 
     redis_url: str = Field(
         default="redis://localhost:6379",
