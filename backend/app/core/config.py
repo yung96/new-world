@@ -77,9 +77,15 @@ class Settings(BaseSettings):
         description="Возраст файла (сек.), после которого orphan может быть удален",
     )
 
-    GPT_CLIENT_BASE_URL: str
-    GPT_CLIENT_KEY: str
-    GPT_MODEL: str
+    GPT_CLIENT_BASE_URL: str | None = Field(
+        default=None, description="Базовый URL GPT-клиента (опционально для MVP)"
+    )
+    GPT_CLIENT_KEY: str | None = Field(
+        default=None, description="API-ключ GPT-клиента (опционально для MVP)"
+    )
+    GPT_MODEL: str = Field(
+        default="gpt-4o-mini", description="Модель GPT по умолчанию"
+    )
 
     @property
     def frontend_cors_origins_list(self) -> list[str]:
