@@ -1,0 +1,106 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    ports:
+        - "127.0.0.1:15432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:latest
+    container_name: kraeved_redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:16379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kraeved_api
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "127.0.0.1:18000:8000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/ping')\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      start_period: 10s
+      retries: 10
+
+
+
+  # Сервис сборки фронтенда (встроено в docker build)
+  frontend-build:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: kraeved_frontend_build
+    # По умолчанию включён: docker compose up -d --build соберёт dist в volume
+    volumes:
+      - frontend_dist:/dist
+    restart: "no"
+
+  # Публичный фронт и обратный прокси
+  caddy:
+    image: caddy:2-alpine
+    container_name: kraeved_caddy
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+      - frontend_dist:/srv
+    depends_on:
+      api:
+        condition: service_started
+      frontend-build:
+        condition: service_completed_successfully
+    logging:
+      driver: "none"
+
+
+volumes:
+  pgdata:
+  redisdata:
+  caddy_data:
+  caddy_config:
+  frontend_dist:
