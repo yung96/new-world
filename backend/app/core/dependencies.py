@@ -2,6 +2,7 @@
 Модуль зависимостей для клиентов инфраструктуры.
 Содержит только клиенты (HTTP, Redis, DB), бизнес-логика остаётся в сервисах.
 """
+
 from typing import AsyncGenerator
 
 import httpx
@@ -49,6 +50,8 @@ async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]
     Yields:
         Асинхронная сессия SQLAlchemy.
     """
-    session_factory: async_sessionmaker[AsyncSession] = request.app.state.db_session_factory
+    session_factory: async_sessionmaker[AsyncSession] = (
+        request.app.state.db_session_factory
+    )
     async with session_factory() as session:
         yield session

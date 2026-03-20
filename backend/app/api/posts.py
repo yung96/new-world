@@ -1,9 +1,10 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, status
-from pydantic import BaseModel, Field
+from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.base_schema import BasePydanticModel
 from app.api.auth import get_current_user
 from app.core.dependencies import get_db_session
 from app.models.post import Post, Season
@@ -13,12 +14,12 @@ from app.services.post_service import PostService
 router = APIRouter()
 
 
-class PostAuthorResponse(BaseModel):
+class PostAuthorResponse(BasePydanticModel):
     id: int
     phone: str
 
 
-class PostCreateRequest(BaseModel):
+class PostCreateRequest(BasePydanticModel):
     mediaUrls: list[str] = Field(default_factory=list)
     title: str
     description: str | None = None
@@ -29,7 +30,7 @@ class PostCreateRequest(BaseModel):
     season: Season
 
 
-class PostUpdateRequest(BaseModel):
+class PostUpdateRequest(BasePydanticModel):
     mediaUrls: list[str] | None = None
     title: str | None = None
     description: str | None = None
@@ -40,7 +41,7 @@ class PostUpdateRequest(BaseModel):
     season: Season | None = None
 
 
-class PostResponse(BaseModel):
+class PostResponse(BasePydanticModel):
     id: int
     authorId: int
     mediaUrls: list[str]
@@ -57,7 +58,7 @@ class PostResponse(BaseModel):
     author: PostAuthorResponse
 
 
-class PostListResponse(BaseModel):
+class PostListResponse(BasePydanticModel):
     items: list[PostResponse]
     total: int
     page: int
@@ -80,14 +81,20 @@ def _to_response(post: Post, average_rating: float | None = None) -> PostRespons
         interestIds=[interest.id for interest in post.interests],
         tags=list(post.tags or []),
         season=post.season,
-        averageRating=round(float(average_rating), 2) if average_rating is not None else None,
+        averageRating=(
+            round(float(average_rating), 2) if average_rating is not None else None
+        ),
         createdAt=post.created_at,
         updatedAt=post.updated_at,
         author=PostAuthorResponse(id=post.author.id, phone=post.author.phone),
     )
 
 
-@router.post("/posts", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/posts",
+    response_model=PostResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_post(
     payload: PostCreateRequest,
     current_user: User = Depends(get_current_user),
@@ -108,7 +115,10 @@ async def create_post(
     return _to_response(post, avg_rating)
 
 
-@router.get("/posts", response_model=PostListResponse)
+@router.get(
+    "/posts",
+    response_model=PostListResponse,
+)
 async def list_posts(
     page: int = Query(default=1, ge=1),
     pageSize: int = Query(default=20, ge=1, le=100),
@@ -119,13 +129,19 @@ async def list_posts(
     return PostListResponse(items=items, total=total, page=page, pageSize=pageSize)
 
 
-@router.get("/posts/{post_id}", response_model=PostResponse)
+@router.get(
+    "/posts/{post_id}",
+    response_model=PostResponse,
+)
 async def get_post(post_id: int, db: AsyncSession = Depends(get_db_session)):
     post, avg_rating = await _service(db).get_post_or_404(post_id)
     return _to_response(post, avg_rating)
 
 
-@router.patch("/posts/{post_id}", response_model=PostResponse)
+@router.patch(
+    "/posts/{post_id}",
+    response_model=PostResponse,
+)
 async def update_post(
     post_id: int,
     payload: PostUpdateRequest,
@@ -148,7 +164,10 @@ async def update_post(
     return _to_response(post, avg_rating)
 
 
-@router.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/posts/{post_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def delete_post(
     post_id: int,
     current_user: User = Depends(get_current_user),
@@ -157,25 +176,37 @@ async def delete_post(
     await _service(db).delete_post(actor=current_user, post_id=post_id)
 
 
-@router.post("/posts/{post_id}/interests/{interest_id}", response_model=PostResponse)
+@router.post(
+    "/posts/{post_id}/interests/{interest_id}",
+    response_model=PostResponse,
+)
 async def add_interest_to_post(
     post_id: int,
     interest_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    updated = await _service(db).add_interest(actor=current_user, post_id=post_id, interest_id=interest_id)
+    updated = await _service(db).add_interest(
+        actor=current_user, post_id=post_id, interest_id=interest_id
+    )
     post, avg_rating = await _service(db).get_post_or_404(updated.id)
     return _to_response(post, avg_rating)
 
 
-@router.delete("/posts/{post_id}/interests/{interest_id}", response_model=PostResponse)
+@router.delete(
+    "/posts/{post_id}/interests/{interest_id}",
+    response_model=PostResponse,
+)
 async def remove_interest_from_post(
     post_id: int,
     interest_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    updated = await _service(db).remove_interest(actor=current_user, post_id=post_id, interest_id=interest_id)
+    updated = await _service(db).remove_interest(
+        actor=current_user,
+        post_id=post_id,
+        interest_id=interest_id,
+    )
     post, avg_rating = await _service(db).get_post_or_404(updated.id)
     return _to_response(post, avg_rating)

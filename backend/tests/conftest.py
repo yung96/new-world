@@ -12,7 +12,6 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-
 _BASE_DIR = Path(__file__).resolve().parents[1]
 
 _db_name = os.environ.get("POSTGRES_DB_TEST", "db_test")
@@ -26,7 +25,6 @@ os.environ.setdefault(
     f"postgresql+asyncpg://{_db_user}:{_db_password}@{_db_host}:{_db_port}/{_db_name}",
 )
 os.environ.setdefault("REDIS_URL", "redis://redis_test:6379")
-os.environ.setdefault("BOT_TOKEN", "test-bot-token")
 os.environ.setdefault("SECRET_KEY", "test-secret")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "5")
 
@@ -40,7 +38,7 @@ async def apply_migrations():
     alembic_ini = _BASE_DIR / "alembic.ini"
     config = Config(str(alembic_ini))
     command.upgrade(config, "head")
-    engine = create_async_engine(settings.database_url, echo=False)
+    engine = create_async_engine(settings.db_url, echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     await engine.dispose()
@@ -49,7 +47,7 @@ async def apply_migrations():
 
 @pytest_asyncio.fixture
 async def db_session():
-    engine = create_async_engine(settings.database_url, echo=False)
+    engine = create_async_engine(settings.db_url, echo=False)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     async with session_factory() as session:
         yield session
@@ -58,7 +56,7 @@ async def db_session():
 
 @pytest_asyncio.fixture(autouse=True)
 async def clean_database():
-    engine = create_async_engine(settings.database_url, echo=False)
+    engine = create_async_engine(settings.db_url, echo=False)
     async with engine.begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):
             await conn.execute(

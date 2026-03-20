@@ -1,9 +1,9 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, status
-from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.base_schema import BasePydanticModel
 from app.api.auth import get_current_user
 from app.core.dependencies import get_db_session
 from app.models.achievement import Achievement
@@ -15,38 +15,38 @@ from app.services.social_service import SocialService
 router = APIRouter()
 
 
-class UserCompactResponse(BaseModel):
+class UserCompactResponse(BasePydanticModel):
     id: int
     phone: str
 
 
-class InterestRequest(BaseModel):
+class InterestRequest(BasePydanticModel):
     name: str
 
 
-class InterestResponse(BaseModel):
+class InterestResponse(BasePydanticModel):
     id: int
     name: str
     createdAt: datetime
 
 
-class AchievementRequest(BaseModel):
+class AchievementRequest(BasePydanticModel):
     name: str
     description: str | None = None
 
 
-class AchievementResponse(BaseModel):
+class AchievementResponse(BasePydanticModel):
     id: int
     name: str
     description: str | None
     createdAt: datetime
 
 
-class FriendRequestCreateRequest(BaseModel):
+class FriendRequestCreateRequest(BasePydanticModel):
     receiverUserId: int
 
 
-class FriendRequestResponse(BaseModel):
+class FriendRequestResponse(BasePydanticModel):
     id: int
     requesterId: int
     receiverId: int
@@ -54,28 +54,28 @@ class FriendRequestResponse(BaseModel):
     createdAt: datetime
 
 
-class PaginatedInterestsResponse(BaseModel):
+class PaginatedInterestsResponse(BasePydanticModel):
     items: list[InterestResponse]
     total: int
     page: int
     pageSize: int
 
 
-class PaginatedAchievementsResponse(BaseModel):
+class PaginatedAchievementsResponse(BasePydanticModel):
     items: list[AchievementResponse]
     total: int
     page: int
     pageSize: int
 
 
-class PaginatedFriendRequestsResponse(BaseModel):
+class PaginatedFriendRequestsResponse(BasePydanticModel):
     items: list[FriendRequestResponse]
     total: int
     page: int
     pageSize: int
 
 
-class PaginatedFriendsResponse(BaseModel):
+class PaginatedFriendsResponse(BasePydanticModel):
     items: list[UserCompactResponse]
     total: int
     page: int
@@ -91,7 +91,12 @@ def _interest_to_response(item: Interest) -> InterestResponse:
 
 
 def _achievement_to_response(item: Achievement) -> AchievementResponse:
-    return AchievementResponse(id=item.id, name=item.name, description=item.description, createdAt=item.created_at)
+    return AchievementResponse(
+        id=item.id,
+        name=item.name,
+        description=item.description,
+        createdAt=item.created_at,
+    )
 
 
 def _friend_request_to_response(item: FriendRequest) -> FriendRequestResponse:
@@ -104,7 +109,11 @@ def _friend_request_to_response(item: FriendRequest) -> FriendRequestResponse:
     )
 
 
-@router.post("/interests", response_model=InterestResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/interests",
+    response_model=InterestResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_interest(
     payload: InterestRequest,
     _current_user: User = Depends(get_current_user),
@@ -129,7 +138,10 @@ async def list_interests(
     )
 
 
-@router.delete("/interests/{interest_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/interests/{interest_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def delete_interest(
     interest_id: int,
     _current_user: User = Depends(get_current_user),
@@ -138,37 +150,56 @@ async def delete_interest(
     await _service(db).delete_interest(interest_id)
 
 
-@router.post("/users/me/interests/{interest_id}", response_model=UserCompactResponse)
+@router.post(
+    "/users/me/interests/{interest_id}",
+    response_model=UserCompactResponse,
+)
 async def add_interest_to_me(
     interest_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    user = await _service(db).add_interest_to_user(user=current_user, interest_id=interest_id)
+    user = await _service(db).add_interest_to_user(
+        user=current_user, interest_id=interest_id
+    )
     return UserCompactResponse(id=user.id, phone=user.phone)
 
 
-@router.delete("/users/me/interests/{interest_id}", response_model=UserCompactResponse)
+@router.delete(
+    "/users/me/interests/{interest_id}",
+    response_model=UserCompactResponse,
+)
 async def remove_interest_from_me(
     interest_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    user = await _service(db).remove_interest_from_user(user=current_user, interest_id=interest_id)
+    user = await _service(db).remove_interest_from_user(
+        user=current_user, interest_id=interest_id
+    )
     return UserCompactResponse(id=user.id, phone=user.phone)
 
 
-@router.post("/achievements", response_model=AchievementResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/achievements",
+    response_model=AchievementResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_achievement(
     payload: AchievementRequest,
     _current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    item = await _service(db).create_achievement(name=payload.name, description=payload.description)
+    item = await _service(db).create_achievement(
+        name=payload.name, description=payload.description
+    )
     return _achievement_to_response(item)
 
 
-@router.get("/achievements", response_model=PaginatedAchievementsResponse)
+@router.get(
+    "/achievements",
+    response_model=PaginatedAchievementsResponse,
+)
 async def list_achievements(
     page: int = Query(default=1, ge=1),
     pageSize: int = Query(default=20, ge=1, le=100),
@@ -183,7 +214,10 @@ async def list_achievements(
     )
 
 
-@router.delete("/achievements/{achievement_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/achievements/{achievement_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def delete_achievement(
     achievement_id: int,
     _current_user: User = Depends(get_current_user),
@@ -192,37 +226,56 @@ async def delete_achievement(
     await _service(db).delete_achievement(achievement_id)
 
 
-@router.post("/users/me/achievements/{achievement_id}", response_model=UserCompactResponse)
+@router.post(
+    "/users/me/achievements/{achievement_id}",
+    response_model=UserCompactResponse,
+)
 async def add_achievement_to_me(
     achievement_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    user = await _service(db).add_achievement_to_user(user=current_user, achievement_id=achievement_id)
+    user = await _service(db).add_achievement_to_user(
+        user=current_user, achievement_id=achievement_id
+    )
     return UserCompactResponse(id=user.id, phone=user.phone)
 
 
-@router.delete("/users/me/achievements/{achievement_id}", response_model=UserCompactResponse)
+@router.delete(
+    "/users/me/achievements/{achievement_id}",
+    response_model=UserCompactResponse,
+)
 async def remove_achievement_from_me(
     achievement_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    user = await _service(db).remove_achievement_from_user(user=current_user, achievement_id=achievement_id)
+    user = await _service(db).remove_achievement_from_user(
+        user=current_user, achievement_id=achievement_id
+    )
     return UserCompactResponse(id=user.id, phone=user.phone)
 
 
-@router.post("/friends/requests", response_model=FriendRequestResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/friends/requests",
+    response_model=FriendRequestResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def send_friend_request(
     payload: FriendRequestCreateRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    item = await _service(db).send_friend_request(requester=current_user, receiver_id=payload.receiverUserId)
+    item = await _service(db).send_friend_request(
+        requester=current_user, receiver_id=payload.receiverUserId
+    )
     return _friend_request_to_response(item)
 
 
-@router.get("/friends/requests/incoming", response_model=PaginatedFriendRequestsResponse)
+@router.get(
+    "/friends/requests/incoming",
+    response_model=PaginatedFriendRequestsResponse,
+)
 async def list_incoming_friend_requests(
     current_user: User = Depends(get_current_user),
     page: int = Query(default=1, ge=1),
@@ -230,7 +283,9 @@ async def list_incoming_friend_requests(
     db: AsyncSession = Depends(get_db_session),
 ):
     items, total = await _service(db).list_incoming_friend_requests(
-        user=current_user, page=page, page_size=pageSize
+        user=current_user,
+        page=page,
+        page_size=pageSize,
     )
     return PaginatedFriendRequestsResponse(
         items=[_friend_request_to_response(item) for item in items],
@@ -240,23 +295,32 @@ async def list_incoming_friend_requests(
     )
 
 
-@router.post("/friends/requests/{request_id}/accept", response_model=FriendRequestResponse)
+@router.post(
+    "/friends/requests/{request_id}/accept",
+    response_model=FriendRequestResponse,
+)
 async def accept_friend_request(
     request_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    item = await _service(db).accept_friend_request(user=current_user, request_id=request_id)
+    item = await _service(db).accept_friend_request(
+        user=current_user, request_id=request_id
+    )
     return _friend_request_to_response(item)
 
 
-@router.post("/friends/requests/{request_id}/reject", response_model=FriendRequestResponse)
+@router.post(
+    "/friends/requests/{request_id}/reject", response_model=FriendRequestResponse
+)
 async def reject_friend_request(
     request_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    item = await _service(db).reject_friend_request(user=current_user, request_id=request_id)
+    item = await _service(db).reject_friend_request(
+        user=current_user, request_id=request_id
+    )
     return _friend_request_to_response(item)
 
 
@@ -276,7 +340,9 @@ async def list_friends(
     pageSize: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db_session),
 ):
-    items, total = await _service(db).list_friends(current_user, page=page, page_size=pageSize)
+    items, total = await _service(db).list_friends(
+        current_user, page=page, page_size=pageSize
+    )
     return PaginatedFriendsResponse(
         items=[UserCompactResponse(id=item.id, phone=item.phone) for item in items],
         total=total,
