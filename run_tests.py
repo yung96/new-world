@@ -14,7 +14,7 @@ def main() -> int:
 
     exit_code = 1
     try:
-        exit_code = run(base + ["up", "--build", "--exit-code-from", "tests", "--remove-orphans"])
+        exit_code = run(base + ["up", "--build", "--exit-code-from", "kraeved_tests_runner", "--remove-orphans"])
         return exit_code
     finally:
         # Всегда чистим окружение (контейнеры/сеть/volumes проекта), даже если тесты упали.

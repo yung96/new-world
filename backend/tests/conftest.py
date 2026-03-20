@@ -17,14 +17,14 @@ _BASE_DIR = Path(__file__).resolve().parents[1]
 _db_name = os.environ.get("POSTGRES_DB_TEST", "db_test")
 _db_user = os.environ.get("POSTGRES_USER_TEST", "user_test")
 _db_password = os.environ.get("POSTGRES_PASSWORD_TEST", "password_test")
-_db_host = os.environ.get("TEST_DB_HOST", "postgres_test")
+_db_host = os.environ.get("TEST_DB_HOST", "kraeved_test_postgres")
 _db_port = os.environ.get("TEST_DB_PORT", "5432")
 
 os.environ.setdefault(
     "DATABASE_URL",
     f"postgresql+asyncpg://{_db_user}:{_db_password}@{_db_host}:{_db_port}/{_db_name}",
 )
-os.environ.setdefault("REDIS_URL", "redis://redis_test:6379")
+os.environ.setdefault("REDIS_URL", "redis://kraeved_test_redis:6379")
 os.environ.setdefault("SECRET_KEY", "test-secret")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "5")
 

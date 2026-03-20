@@ -2,7 +2,7 @@
 # Он поднимает полностью изолированную БД и Redis для pytest.
 
 services:
-  postgres_test:
+  kraeved_test_postgres:
     image: postgres:15
     env_file:
       - .env.test
@@ -20,7 +20,7 @@ services:
       timeout: 2s
       retries: 20
 
-  redis_test:
+  kraeved_test_redis:
     image: redis:latest
     tmpfs:
       - /data
@@ -30,16 +30,16 @@ services:
       timeout: 2s
       retries: 20
 
-  tests:
+  kraeved_tests_runner:
     build:
       context: ./backend
       dockerfile: Dockerfile
     env_file:
       - .env.test
     depends_on:
-      postgres_test:
+      kraeved_test_postgres:
         condition: service_healthy
-      redis_test:
+      kraeved_test_redis:
         condition: service_healthy
     command: >
       sh -c "alembic upgrade head && pytest -vv -ra"
