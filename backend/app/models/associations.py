@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, Table, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Integer, Table, UniqueConstraint, text
 
 from app.models import Base
 
@@ -16,6 +16,7 @@ user_interests = Table(
     Base.metadata,
     Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
     Column("interest_id", Integer, ForeignKey("interests.id", ondelete="CASCADE"), primary_key=True),
+    Column("weight", Integer, nullable=False, server_default=text("1")),
 )
 
 

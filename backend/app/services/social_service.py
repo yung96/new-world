@@ -77,6 +77,30 @@ class SocialService:
         user = await self.get_user_or_404(user.id)
         return user
 
+    async def set_interest_weight_for_user(self, *, user: User, interest_id: int, weight: int) -> None:
+        stmt = (
+            user_interests.update()
+            .where(
+                user_interests.c.user_id == user.id,
+                user_interests.c.interest_id == interest_id,
+            )
+            .values(weight=weight)
+        )
+        result = await self.db.execute(stmt)
+        if result.rowcount == 0:
+            interest = await self.db.get(Interest, interest_id)
+            if interest is None:
+                raise HTTPException(status_code=404, detail="Interest not found")
+            raise HTTPException(status_code=404, detail="Interest is not bound to user")
+        await self.db.commit()
+
+    async def get_interest_weights_for_user(self, *, user: User) -> dict[int, int]:
+        stmt = select(user_interests.c.interest_id, user_interests.c.weight).where(
+            user_interests.c.user_id == user.id
+        )
+        rows = (await self.db.execute(stmt)).all()
+        return {row.interest_id: row.weight for row in rows}
+
     async def create_achievement(self, *, name: str, description: str | None) -> Achievement:
         normalized = (name or "").strip()
         if not normalized:
