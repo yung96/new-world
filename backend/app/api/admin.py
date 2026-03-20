@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.base_schema import BasePydanticModel
 from app.core.dependencies import get_db_session
 from app.models.interest import Interest
-from app.models.post import Post
+from app.models.post import Post, Season
 from app.services.post_service import PostService
 from app.services.social_service import SocialService
 
@@ -22,7 +22,7 @@ class AdminPostUpdateRequest(BasePydanticModel):
     geoLat: float | None = Field(default=None, ge=-90, le=90)
     geoLng: float | None = Field(default=None, ge=-180, le=180)
     mediaUrls: list[str] | None = None
-    tags: list[str] | None = None
+    season: Season | None = None
     interestIds: list[int] | None = None
 
 
@@ -40,7 +40,7 @@ class AdminPostCard(BasePydanticModel):
     description: str | None
     authorId: int
     interestIds: list[int]
-    tags: list[str]
+    season: Season
     createdAt: datetime
     updatedAt: datetime
     averageRating: float | None
@@ -49,7 +49,6 @@ class AdminPostCard(BasePydanticModel):
 class AdminInterestCard(BasePydanticModel):
     id: int
     name: str
-    createdAt: datetime
 
 
 class AdminDashboardStats(BasePydanticModel):
@@ -595,7 +594,7 @@ async def get_admin_dashboard(
             description=post.description,
             authorId=post.author_id,
             interestIds=[interest.id for interest in post.interests],
-            tags=list(post.tags or []),
+            season=Season.winter,
             createdAt=post.created_at,
             updatedAt=post.updated_at,
             averageRating=(round(float(avg_rating), 2) if avg_rating is not None else None),
@@ -603,7 +602,7 @@ async def get_admin_dashboard(
         for post, avg_rating in post_rows
     ]
     interest_cards = [
-        AdminInterestCard(id=item.id, name=item.name, createdAt=item.created_at)
+        AdminInterestCard(id=item.id, name=item.name)
         for item in interests
     ]
     total_posts = int((await db.execute(select(func.count(Post.id)))).scalar_one() or 0)
@@ -635,7 +634,7 @@ async def admin_update_post(
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,
         media_urls=payload.mediaUrls,
-        tags=payload.tags,
+        season=payload.season,
         interest_ids=payload.interestIds,
     )
     _, avg_rating = await _post_service(db).get_post_or_404(post.id)

@@ -1,9 +1,19 @@
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, func
+import enum
+
+from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from app.models import Base
 from app.models.associations import post_interests
+
+
+class Season(str, enum.Enum):
+    spring = "spring"
+    summer = "summer"
+    autumn = "autumn"
+    winter = "winter"
+
 
 class Post(Base):
     __tablename__ = "posts"
@@ -15,7 +25,7 @@ class Post(Base):
     description = Column(Text, nullable=True)
     geo_lat = Column(Float, nullable=True)
     geo_lng = Column(Float, nullable=True)
-    tags = Column(JSONB, nullable=False, default=list)
+    season = Column(Enum(Season, name="season_enum"), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 

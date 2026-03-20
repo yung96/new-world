@@ -90,11 +90,12 @@ export function PostDetailsPage() {
           <div className="px-4 text-xs text-zinc-500">Пост #{post.id}</div>
 
           <div className="flex flex-wrap gap-2 px-4">
-            {post.tags?.map((tag) => (
-              <span key={tag} className="text-xs font-medium text-sky-700">
-                #{tag}
-              </span>
-            ))}
+            {/*TODO: Тут сезон*/}
+            {/*{post.tags?.map((tag) => (*/}
+            {/*  <span key={tag} className="text-xs font-medium text-sky-700">*/}
+            {/*    #{tag}*/}
+            {/*  </span>*/}
+            {/*))}*/}
           </div>
           <p className="px-4 text-xs text-zinc-500">interestIds: {(post.interestIds || []).join(', ') || 'none'}</p>
 

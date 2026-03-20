@@ -1,3 +1,6 @@
+from app.models.post import Season
+
+
 async def _auth_headers(client, phone: str) -> dict[str, str]:
     resp = await client.post("/api/auth", json={"phone": phone})
     assert resp.status_code == 200
@@ -15,7 +18,7 @@ async def _create_post(client, headers: dict[str, str], *, title: str = "Тес�
             "geoLat": 55.75,
             "geoLng": 37.61,
             "interestIds": [],
-            "tags": ["tag"],
+            "season": Season.summer.value,
         },
         headers=headers,
     )
@@ -39,7 +42,7 @@ async def test_post_create_and_delete_cycle(client):
             "geoLat": 55.7961,
             "geoLng": 49.1064,
             "interestIds": [interest_id],
-            "tags": ["музей", "история"],
+            "season": Season.summer.value,
         },
         headers=author_headers,
     )
@@ -78,7 +81,7 @@ async def test_post_create_requires_auth(client):
             "geoLat": 55.75,
             "geoLng": 37.61,
             "interestIds": [],
-            "tags": [],
+            "season": Season.winter.value,
         },
     )
     assert resp.status_code == 401
@@ -95,7 +98,7 @@ async def test_post_create_invalid_coordinates_returns_422(client):
             "geoLat": 100.0,
             "geoLng": 200.0,
             "interestIds": [],
-            "tags": [],
+            "season": Season.spring.value,
         },
         headers=headers,
     )
@@ -113,7 +116,7 @@ async def test_post_create_with_missing_interest_returns_404(client):
             "geoLat": 55.75,
             "geoLng": 37.61,
             "interestIds": [999999],
-            "tags": [],
+            "season": Season.autumn.value,
         },
         headers=headers,
     )

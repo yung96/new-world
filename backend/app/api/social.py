@@ -27,7 +27,6 @@ class InterestRequest(BasePydanticModel):
 class InterestResponse(BasePydanticModel):
     id: int
     name: str
-    createdAt: datetime
 
 
 class AchievementRequest(BasePydanticModel):
@@ -87,7 +86,7 @@ def _service(db: AsyncSession) -> SocialService:
 
 
 def _interest_to_response(item: Interest) -> InterestResponse:
-    return InterestResponse(id=item.id, name=item.name, createdAt=item.created_at)
+    return InterestResponse(id=item.id, name=item.name)
 
 
 def _achievement_to_response(item: Achievement) -> AchievementResponse:
