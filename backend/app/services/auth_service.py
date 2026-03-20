@@ -18,6 +18,11 @@ class AuthService:
 
     async def login(self, phone: str) -> str:
         normalized_phone = self.normilize_phone(phone)
+        if not normalized_phone:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Phone must not be empty",
+            )
 
         user = await get_or_create_user(
             self.db,
