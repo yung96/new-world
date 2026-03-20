@@ -30,6 +30,7 @@ class AdminPostUpdateRequest(BasePydanticModel):
 
 class AdminInterestUpdateRequest(BasePydanticModel):
     name: str
+    emoji: str | None = None
 
 
 class AdminInterestCreateRequest(BasePydanticModel):
@@ -52,6 +53,7 @@ class AdminPostCard(BasePydanticModel):
 class AdminInterestCard(BasePydanticModel):
     id: int
     name: str
+    emoji: str
 
 
 class AdminDashboardStats(BasePydanticModel):
@@ -147,13 +149,13 @@ async def admin_editor_page():
       flex-wrap: wrap;
       align-items: center;
     }
-    input, textarea, button {
+    input, textarea, select, button {
       font: inherit;
       border-radius: 10px;
       border: 1px solid var(--line);
       padding: 8px 10px;
     }
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       background: #fff;
       color: var(--text);
@@ -297,7 +299,7 @@ async def admin_editor_page():
       <div class="card">
         <h2>Места (посты)</h2>
         <div class="toolbar" style="margin-bottom: 8px;">
-          <input id="postSearch" placeholder="Поиск по title/description/tags" oninput="renderPostRows()" />
+          <input id="postSearch" placeholder="Поиск по title/description/season" oninput="renderPostRows()" />
           <button class="ghost" onclick="clearPostSearch()">Сброс</button>
         </div>
         <div class="list">
@@ -325,7 +327,12 @@ async def admin_editor_page():
           <input id="editPostId" disabled placeholder="post_id" />
           <input id="editPostTitle" placeholder="Название места" />
           <textarea id="editPostDescription" placeholder="Описание"></textarea>
-          <input id="editPostTags" placeholder="Теги через запятую: музей, история" />
+          <select id="editPostSeason">
+            <option value="spring">spring</option>
+            <option value="summer">summer</option>
+            <option value="autumn">autumn</option>
+            <option value="winter">winter</option>
+          </select>
           <div>
             <p class="muted" style="margin-bottom: 6px;">Интересы места (клик для выбора):</p>
             <div id="interestChips" class="chips"></div>
@@ -341,6 +348,7 @@ async def admin_editor_page():
         <h2>Управление интересами</h2>
         <div class="row" style="margin-bottom: 8px;">
           <input id="newInterestName" placeholder="Новый интерес" />
+          <input id="newInterestEmoji" placeholder="Emoji (необязательно)" />
           <button class="primary" onclick="createInterest()">Создать</button>
         </div>
         <div class="list" id="interestsList"></div>
@@ -410,8 +418,7 @@ async def admin_editor_page():
       const tbody = byId('postsTableBody');
       const q = normalize(byId('postSearch').value);
       const rows = state.posts.filter((post) => {
-        const tags = (post.tags || []).join(' ');
-        return normalize(post.title).includes(q) || normalize(post.description).includes(q) || normalize(tags).includes(q);
+        return normalize(post.title).includes(q) || normalize(post.description).includes(q) || normalize(post.season).includes(q);
       });
       tbody.innerHTML = rows.map((post) => {
         const active = post.id === state.selectedPostId ? ' class="active"' : '';
@@ -420,7 +427,7 @@ async def admin_editor_page():
             <td>#${post.id}</td>
             <td>
               <button class="post-title-btn" onclick="selectPost(${post.id})">${escapeHtml(post.title || 'Без названия')}</button>
-              <div class="muted">${escapeHtml((post.tags || []).join(', '))}</div>
+              <div class="muted">season: ${escapeHtml(post.season || '-')}</div>
             </td>
             <td>${post.authorId}</td>
             <td>${post.averageRating == null ? '-' : post.averageRating}</td>
@@ -443,8 +450,7 @@ async def admin_editor_page():
       list.innerHTML = state.interests.map((item) => `
         <div class="list-item">
           <div>
-            <strong>#${item.id}</strong> ${escapeHtml(item.name)}
-            <div class="muted">${new Date(item.createdAt).toLocaleString()}</div>
+            <strong>#${item.id}</strong> ${escapeHtml(item.name)} ${escapeHtml(item.emoji || '')}
           </div>
           <div class="toolbar">
             <button class="ghost" onclick="renameInterestPrompt(${item.id})">Переименовать</button>
@@ -480,7 +486,7 @@ async def admin_editor_page():
       byId('editPostId').value = String(post.id);
       byId('editPostTitle').value = post.title || '';
       byId('editPostDescription').value = post.description || '';
-      byId('editPostTags').value = (post.tags || []).join(', ');
+      byId('editPostSeason').value = post.season || 'spring';
       byId('editorHint').textContent = `Редактируется место #${post.id}`;
       renderPostRows();
       renderInterestChips();
@@ -527,14 +533,13 @@ async def admin_editor_page():
       }
       const title = byId('editPostTitle').value.trim();
       const description = byId('editPostDescription').value.trim();
-      const tags = byId('editPostTags').value
-        .split(',').map(v => v.trim()).filter(Boolean);
+      const season = byId('editPostSeason').value;
       const interestIds = Array.from(state.selectedInterestIds.values());
       try {
         const payload = await api(`/api/admin/posts/${state.selectedPostId}`, 'PATCH', {
           title: title || null,
           description: description || undefined,
-          tags,
+          season,
           interestIds,
         });
         setStatus(`Место #${payload.id} сохранено`);
@@ -557,7 +562,7 @@ async def admin_editor_page():
         byId('editPostId').value = '';
         byId('editPostTitle').value = '';
         byId('editPostDescription').value = '';
-        byId('editPostTags').value = '';
+        byId('editPostSeason').value = 'spring';
         byId('editorHint').textContent = 'Выбери место в таблице слева.';
         setStatus('Место удалено');
         await loadDashboard();
@@ -568,14 +573,16 @@ async def admin_editor_page():
 
     async function createInterest() {
       const name = byId('newInterestName').value.trim();
+      const emoji = byId('newInterestEmoji').value.trim();
       if (!name) {
         setStatus('Введите название интереса.', false);
         return;
       }
       try {
-        const payload = await api('/api/admin/interests', 'POST', { name });
+        const payload = await api('/api/admin/interests', 'POST', { name, emoji: emoji || null });
         byId('newInterestName').value = '';
-        setStatus(`Создан интерес #${payload.id}: ${payload.name}`);
+        byId('newInterestEmoji').value = '';
+        setStatus(`Создан интерес #${payload.id}: ${payload.name} ${payload.emoji || ''}`);
         await loadDashboard();
       } catch (e) {
         setStatus('Ошибка создания интереса: ' + e.message, false);
@@ -585,11 +592,13 @@ async def admin_editor_page():
     async function renameInterestPrompt(id) {
       const item = state.interests.find((interest) => interest.id === id);
       const oldName = item?.name || '';
+      const oldEmoji = item?.emoji || '';
       const name = window.prompt('Новое имя интереса:', oldName);
       if (!name) return;
+      const emoji = window.prompt('Emoji интереса (можно оставить пустым):', oldEmoji);
       try {
-        const payload = await api(`/api/admin/interests/${id}`, 'PATCH', { name });
-        setStatus(`Интерес #${payload.id} переименован в "${payload.name}"`);
+        const payload = await api(`/api/admin/interests/${id}`, 'PATCH', { name, emoji: emoji || null });
+        setStatus(`Интерес #${payload.id} обновлен: "${payload.name}" ${payload.emoji || ''}`);
         await loadDashboard();
       } catch (e) {
         setStatus('Ошибка переименования интереса: ' + e.message, false);
@@ -675,7 +684,7 @@ async def get_admin_dashboard(
             description=post.description,
             authorId=post.author_id,
             interestIds=[interest.id for interest in post.interests],
-            season=Season.winter,
+            season=post.season,
             createdAt=post.created_at,
             updatedAt=post.updated_at,
             averageRating=(round(float(avg_rating), 2) if avg_rating is not None else None),
@@ -683,7 +692,7 @@ async def get_admin_dashboard(
         for post, avg_rating in post_rows
     ]
     interest_cards = [
-        AdminInterestCard(id=item.id, name=item.name)
+        AdminInterestCard(id=item.id, name=item.name, emoji=item.emoji or "")
         for item in interests
     ]
     user_ids = [item.id for item in users]
@@ -790,7 +799,7 @@ async def admin_create_interest(
 ):
     """Создание интереса через admin API."""
     interest = await _social_service(db).create_interest(payload.name, payload.emoji)
-    return AdminInterestCard(id=interest.id, name=interest.name)
+    return AdminInterestCard(id=interest.id, name=interest.name, emoji=interest.emoji or "")
 
 
 @router.patch(
@@ -809,7 +818,11 @@ async def admin_update_interest(
     interest = await _social_service(db).update_interest(
         interest_id=interest_id, name=payload.name
     )
-    return AdminInterestCard(id=interest.id, name=interest.name)
+    if payload.emoji is not None:
+        interest.emoji = (payload.emoji or "").strip() or "🪁"
+        await db.commit()
+        await db.refresh(interest)
+    return AdminInterestCard(id=interest.id, name=interest.name, emoji=interest.emoji or "")
 
 
 @router.delete(
