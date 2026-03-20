@@ -1,16 +1,12 @@
-def _admin_headers() -> dict[str, str]:
-    return {"X-Admin-Key": "dev-admin-key"}
-
-
 async def _auth_headers(client, phone: str) -> dict[str, str]:
     resp = await client.post("/api/auth", json={"phone": phone})
     assert resp.status_code == 200
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
 
-async def test_admin_dashboard_requires_key(client):
+async def test_admin_dashboard_is_open_for_mvp(client):
     resp = await client.get("/api/admin/dashboard")
-    assert resp.status_code == 401
+    assert resp.status_code == 200
 
 
 async def test_admin_can_edit_post_and_interest_set(client):
@@ -42,7 +38,6 @@ async def test_admin_can_edit_post_and_interest_set(client):
     create_interest2 = await client.post(
         "/api/admin/interests",
         json={"name": "Новый интерес"},
-        headers=_admin_headers(),
     )
     assert create_interest2.status_code == 200
     new_interest_id = create_interest2.json()["id"]
@@ -55,7 +50,6 @@ async def test_admin_can_edit_post_and_interest_set(client):
             "interestIds": [new_interest_id],
             "tags": ["edited"],
         },
-        headers=_admin_headers(),
     )
     assert patch_resp.status_code == 200
     payload = patch_resp.json()
@@ -76,7 +70,6 @@ async def test_admin_can_rename_interest(client):
     patch_resp = await client.patch(
         f"/api/admin/interests/{interest_id}",
         json={"name": "Переименовано"},
-        headers=_admin_headers(),
     )
     assert patch_resp.status_code == 200
     assert patch_resp.json()["name"] == "Переименовано"

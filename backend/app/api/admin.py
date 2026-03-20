@@ -6,7 +6,6 @@ from pydantic import Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.admin_auth import require_admin_key
 from app.api.base_schema import BasePydanticModel
 from app.core.dependencies import get_db_session
 from app.models.interest import Interest
@@ -107,11 +106,8 @@ async def admin_editor_page():
   <div class="wrap">
     <div class="card">
       <h1>Admin Dashboard (MVP)</h1>
-      <p class="muted">Обезличенный редактор admin endpoint-ов. Все запросы идут в <code>/api/admin/*</code>.</p>
-      <div class="row">
-        <input id="adminKey" placeholder="X-Admin-Key" />
-        <button onclick="loadDashboard()">Загрузить дашборд</button>
-      </div>
+      <p class="muted">Обезличенный редактор admin endpoint-ов для MVP. Все операции открыты по роутам <code>/api/admin/*</code>.</p>
+      <button onclick="loadDashboard()">Загрузить дашборд</button>
     </div>
 
     <div class="card">
@@ -158,15 +154,11 @@ async def admin_editor_page():
   </div>
 
   <script>
-    const getKey = () => document.getElementById('adminKey').value.trim();
-
     const api = async (url, method = 'GET', body = null) => {
+      const headers = { 'Content-Type': 'application/json' };
       const res = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Admin-Key': getKey(),
-        },
+        headers,
         body: body ? JSON.stringify(body) : undefined,
       });
       const text = await res.text();
@@ -250,7 +242,6 @@ async def admin_editor_page():
 
 @router.get("/dashboard", response_model=AdminDashboardResponse)
 async def get_admin_dashboard(
-    _: None = Depends(require_admin_key),
     postsPage: int = Query(default=1, ge=1),
     postsPageSize: int = Query(default=20, ge=1, le=100),
     interestsPage: int = Query(default=1, ge=1),
@@ -300,7 +291,6 @@ async def get_admin_dashboard(
 async def admin_update_post(
     post_id: int,
     payload: AdminPostUpdateRequest,
-    _: None = Depends(require_admin_key),
     db: AsyncSession = Depends(get_db_session),
 ):
     post = await _post_service(db).admin_update_post(
@@ -330,7 +320,6 @@ async def admin_update_post(
 @router.post("/interests", response_model=AdminInterestCard)
 async def admin_create_interest(
     payload: AdminInterestCreateRequest,
-    _: None = Depends(require_admin_key),
     db: AsyncSession = Depends(get_db_session),
 ):
     interest = await _social_service(db).create_interest(payload.name)
@@ -341,7 +330,6 @@ async def admin_create_interest(
 async def admin_update_interest(
     interest_id: int,
     payload: AdminInterestUpdateRequest,
-    _: None = Depends(require_admin_key),
     db: AsyncSession = Depends(get_db_session),
 ):
     interest = await _social_service(db).update_interest(
@@ -353,7 +341,6 @@ async def admin_update_interest(
 @router.delete("/interests/{interest_id}", status_code=204)
 async def admin_delete_interest(
     interest_id: int,
-    _: None = Depends(require_admin_key),
     db: AsyncSession = Depends(get_db_session),
 ):
     await _social_service(db).delete_interest(interest_id)

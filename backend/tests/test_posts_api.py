@@ -7,7 +7,7 @@ async def _auth_headers(client, phone: str) -> dict[str, str]:
 
 async def _create_post(client, headers: dict[str, str], *, title: str = "Тестовый пост") -> int:
     resp = await client.post(
-        "/api/posts",
+        "/api/user/posts",
         json={
             "mediaUrls": [],
             "title": title,
@@ -61,7 +61,7 @@ async def test_post_create_and_delete_cycle(client):
     assert payload["total"] >= 1
     assert any(item["id"] == post_id for item in payload["items"])
 
-    delete_resp = await client.delete(f"/api/posts/{post_id}", headers=author_headers)
+    delete_resp = await client.delete(f"/api/posts/{post_id}")
     assert delete_resp.status_code == 204
 
     get_deleted_resp = await client.get(f"/api/posts/{post_id}")
@@ -120,40 +120,38 @@ async def test_post_create_with_missing_interest_returns_404(client):
     assert resp.status_code == 404
 
 
-async def test_post_update_by_non_author_returns_403(client):
+async def test_post_update_is_open_for_mvp(client):
     author_headers = await _auth_headers(client, "+70000000006")
-    other_headers = await _auth_headers(client, "+70000000007")
     post_id = await _create_post(client, author_headers, title="Чужой пост")
 
     resp = await client.patch(
         f"/api/posts/{post_id}",
         json={"title": "Попытка взлома"},
-        headers=other_headers,
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
+    assert resp.json()["title"] == "Попытка взлома"
 
 
-async def test_post_delete_by_non_author_returns_403(client):
+async def test_post_delete_is_open_for_mvp(client):
     author_headers = await _auth_headers(client, "+70000000008")
-    other_headers = await _auth_headers(client, "+70000000009")
     post_id = await _create_post(client, author_headers)
 
-    resp = await client.delete(f"/api/posts/{post_id}", headers=other_headers)
-    assert resp.status_code == 403
+    resp = await client.delete(f"/api/posts/{post_id}")
+    assert resp.status_code == 204
 
 
-async def test_post_interest_add_remove_cycle(client):
+async def test_post_interest_add_remove_cycle_open_for_mvp(client):
     headers = await _auth_headers(client, "+70000000012")
     interest_resp = await client.post("/api/interests", json={"name": "Архитектура"}, headers=headers)
     assert interest_resp.status_code == 201
     interest_id = interest_resp.json()["id"]
     post_id = await _create_post(client, headers)
 
-    add_resp = await client.post(f"/api/posts/{post_id}/interests/{interest_id}", headers=headers)
+    add_resp = await client.post(f"/api/posts/{post_id}/interests/{interest_id}")
     assert add_resp.status_code == 200
     assert interest_id in add_resp.json()["interestIds"]
 
-    remove_resp = await client.delete(f"/api/posts/{post_id}/interests/{interest_id}", headers=headers)
+    remove_resp = await client.delete(f"/api/posts/{post_id}/interests/{interest_id}")
     assert remove_resp.status_code == 200
     assert interest_id not in remove_resp.json()["interestIds"]
 

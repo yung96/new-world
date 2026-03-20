@@ -143,16 +143,14 @@ async def get_post(post_id: int, db: AsyncSession = Depends(get_db_session)):
     "/posts/{post_id}",
     response_model=PostResponse,
     summary="Обновить пост",
-    description="Частично обновляет пост. Доступно только автору поста.",
+    description="Частично обновляет пост. Админский сценарий для MVP.",
 )
 async def update_post(
     post_id: int,
     payload: PostUpdateRequest,
-    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    updated = await _service(db).update_post(
-        actor=current_user,
+    updated = await _service(db).admin_update_post(
         post_id=post_id,
         title=payload.title,
         description=payload.description,
@@ -170,31 +168,27 @@ async def update_post(
     "/posts/{post_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Удалить пост",
-    description="Удаляет пост. Доступно только автору поста.",
+    description="Удаляет пост. Админский сценарий для MVP.",
 )
 async def delete_post(
     post_id: int,
-    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    await _service(db).delete_post(actor=current_user, post_id=post_id)
+    await _service(db).admin_delete_post(post_id=post_id)
 
 
 @router.post(
     "/posts/{post_id}/interests/{interest_id}",
     response_model=PostResponse,
     summary="Добавить интерес к посту",
-    description="Привязывает интерес к посту. Доступно только автору поста.",
+    description="Привязывает интерес к посту. Админский сценарий для MVP.",
 )
 async def add_interest_to_post(
     post_id: int,
     interest_id: int,
-    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    updated = await _service(db).add_interest(
-        actor=current_user, post_id=post_id, interest_id=interest_id
-    )
+    updated = await _service(db).admin_add_interest(post_id=post_id, interest_id=interest_id)
     post, avg_rating = await _service(db).get_post_or_404(updated.id)
     return _to_response(post, avg_rating)
 
@@ -203,18 +197,15 @@ async def add_interest_to_post(
     "/posts/{post_id}/interests/{interest_id}",
     response_model=PostResponse,
     summary="Убрать интерес из поста",
-    description="Удаляет привязку интереса к посту. Доступно только автору поста.",
+    description="Удаляет привязку интереса к посту. Админский сценарий для MVP.",
 )
 async def remove_interest_from_post(
     post_id: int,
     interest_id: int,
-    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    updated = await _service(db).remove_interest(
-        actor=current_user,
-        post_id=post_id,
-        interest_id=interest_id,
+    updated = await _service(db).admin_remove_interest(
+        post_id=post_id, interest_id=interest_id
     )
     post, avg_rating = await _service(db).get_post_or_404(updated.id)
     return _to_response(post, avg_rating)

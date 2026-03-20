@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { postsApi, systemApi } from '../shared/api/endpoints'
@@ -6,7 +6,6 @@ import { Card } from '../shared/ui/Card'
 import { fileUrl } from '../shared/api/client'
 import { formatDateTime } from '../shared/lib/format'
 import { normalizeError } from '../shared/lib/errors'
-import { useSessionStore } from '../app/store/sessionStore'
 
 const stories = [
   'ivan',
@@ -18,8 +17,6 @@ const stories = [
 ]
 
 export function FeedPage() {
-  const queryClient = useQueryClient()
-  const me = useSessionStore((state) => state.user)
   const [page, setPage] = useState(1)
 
   const pingQuery = useQuery({
@@ -30,13 +27,6 @@ export function FeedPage() {
   const postsQuery = useQuery({
     queryKey: ['posts', page],
     queryFn: () => postsApi.list({ page, pageSize: 10 }),
-  })
-
-  const deletePostMutation = useMutation({
-    mutationFn: postsApi.remove,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts'] })
-    },
   })
 
   return (
@@ -132,15 +122,6 @@ export function FeedPage() {
               >
                 Подробнее
               </Link>
-              {me?.id === post.authorId ? (
-                <button
-                  type="button"
-                  onClick={() => deletePostMutation.mutate(post.id)}
-                  className="rounded-md border border-rose-300 px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50"
-                >
-                  Удалить
-                </button>
-              ) : null}
             </div>
           </div>
         </Card>

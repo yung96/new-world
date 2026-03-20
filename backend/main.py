@@ -39,7 +39,7 @@ OPENAPI_TAGS = [
     },
     {
         "name": "Admin",
-        "description": "Обезличенные admin endpoint-ы (доступ по X-Admin-Key).",
+        "description": "Обезличенные admin endpoint-ы для MVP.",
     },
 ]
 

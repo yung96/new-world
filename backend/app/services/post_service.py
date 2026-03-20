@@ -167,6 +167,29 @@ class PostService:
         updated_post, _ = await self.get_post_or_404(post.id)
         return updated_post
 
+    async def admin_delete_post(self, *, post_id: int) -> None:
+        post, _ = await self.get_post_or_404(post_id)
+        await self.db.delete(post)
+        await self.db.commit()
+
+    async def admin_add_interest(self, *, post_id: int, interest_id: int) -> Post:
+        post, _ = await self.get_post_or_404(post_id)
+        interest = await self.db.get(Interest, interest_id)
+        if interest is None:
+            raise HTTPException(status_code=404, detail="Interest not found")
+        if interest not in post.interests:
+            post.interests.append(interest)
+            await self.db.commit()
+        updated_post, _ = await self.get_post_or_404(post.id)
+        return updated_post
+
+    async def admin_remove_interest(self, *, post_id: int, interest_id: int) -> Post:
+        post, _ = await self.get_post_or_404(post_id)
+        post.interests = [i for i in post.interests if i.id != interest_id]
+        await self.db.commit()
+        updated_post, _ = await self.get_post_or_404(post.id)
+        return updated_post
+
     async def add_interest(self, *, actor: User, post_id: int, interest_id: int) -> Post:
         post, _ = await self.get_post_or_404(post_id)
         if post.author_id != actor.id:

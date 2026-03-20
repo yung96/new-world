@@ -56,10 +56,6 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 5
-    admin_api_key: str = Field(
-        default="dev-admin-key",
-        description="Ключ для доступа к обезличенным admin endpoint-ам (X-Admin-Key)",
-    )
 
     # Дополнительные настройки приложения
     debug: bool = Field(default=False, description="Режим отладки")
