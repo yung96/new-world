@@ -34,6 +34,7 @@ class AdminInterestUpdateRequest(BasePydanticModel):
 
 class AdminInterestCreateRequest(BasePydanticModel):
     name: str
+    emoji: str
 
 
 class AdminPostCard(BasePydanticModel):
@@ -788,8 +789,8 @@ async def admin_create_interest(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Создание интереса через admin API."""
-    interest = await _social_service(db).create_interest(payload.name)
-    return AdminInterestCard(id=interest.id, name=interest.name, createdAt=interest.created_at)
+    interest = await _social_service(db).create_interest(payload.name, payload.emoji)
+    return AdminInterestCard(id=interest.id, name=interest.name)
 
 
 @router.patch(
@@ -808,7 +809,7 @@ async def admin_update_interest(
     interest = await _social_service(db).update_interest(
         interest_id=interest_id, name=payload.name
     )
-    return AdminInterestCard(id=interest.id, name=interest.name, createdAt=interest.created_at)
+    return AdminInterestCard(id=interest.id, name=interest.name)
 
 
 @router.delete(
