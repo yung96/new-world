@@ -85,75 +85,251 @@ async def admin_editor_page():
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kraeved Admin</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: #f5f5f5; color: #111; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
-    .card { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
-    h1, h2 { margin: 0 0 10px; }
-    h1 { font-size: 24px; }
-    h2 { font-size: 18px; }
-    input, textarea, button { font: inherit; }
-    input, textarea { width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 8px; border: 1px solid #bbb; border-radius: 8px; }
-    textarea { min-height: 80px; resize: vertical; }
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --line: #e4e7ec;
+      --text: #0f1728;
+      --muted: #667085;
+      --brand: #1f5eff;
+      --danger: #dc2626;
+      --ok: #169854;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .layout {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 14px;
+      min-height: 100vh;
+    }
+    .col { display: flex; flex-direction: column; gap: 12px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    h2 { margin: 0 0 8px; font-size: 16px; }
+    p { margin: 0; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    input, textarea, button {
+      font: inherit;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+    }
+    input, textarea {
+      width: 100%;
+      background: #fff;
+      color: var(--text);
+    }
+    textarea { min-height: 96px; resize: vertical; }
+    button {
+      cursor: pointer;
+      background: #fff;
+      color: var(--text);
+      font-weight: 600;
+    }
+    button.primary {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: #fff;
+    }
+    button.ghost {
+      background: #fff;
+      border-color: var(--line);
+    }
+    button.danger {
+      border-color: #f1c0c0;
+      color: var(--danger);
+      background: #fff;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px;
+      background: #fafcff;
+    }
+    .stat strong {
+      display: block;
+      font-size: 19px;
+      margin-bottom: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; }
+    tr.active { background: #f2f6ff; }
+    .post-title-btn {
+      border: 0;
+      background: none;
+      padding: 0;
+      margin: 0;
+      color: var(--brand);
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 12px;
+      background: #fff;
+      cursor: pointer;
+      user-select: none;
+    }
+    .chip.active {
+      background: #e9efff;
+      border-color: #abc1ff;
+      color: #1c46c6;
+      font-weight: 600;
+    }
+    .list {
+      max-height: 320px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    .list-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    .list-item:last-child { border-bottom: 0; }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-    button { padding: 8px 12px; border-radius: 8px; border: 1px solid #222; background: #111; color: #fff; cursor: pointer; }
-    button.secondary { background: #fff; color: #111; }
-    pre { background: #fafafa; border: 1px solid #ddd; padding: 10px; border-radius: 8px; overflow: auto; }
-    .muted { color: #666; font-size: 12px; }
+    .col-gap { display: flex; flex-direction: column; gap: 8px; }
+    .status {
+      font-size: 12px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      background: #fcfcfd;
+      white-space: pre-wrap;
+    }
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>Admin Dashboard (MVP)</h1>
-      <p class="muted">Обезличенный редактор admin endpoint-ов для MVP. Все операции открыты по роутам <code>/api/admin/*</code>.</p>
-      <button onclick="loadDashboard()">Загрузить дашборд</button>
+  <div class="layout">
+    <div class="col">
+      <div class="card">
+        <h1>Kraeved Admin</h1>
+        <p class="muted">Удобное управление местами и интересами для MVP.</p>
+        <div class="toolbar" style="margin-top: 10px;">
+          <button class="primary" onclick="loadDashboard()">Обновить данные</button>
+          <span class="muted">Посты: page=<span id="postsPageInfo">1</span>, Интереcы: page=<span id="interestsPageInfo">1</span></span>
+        </div>
+        <div class="stats" style="margin-top: 10px;">
+          <div class="stat"><strong id="statPosts">0</strong><span class="muted">Мест</span></div>
+          <div class="stat"><strong id="statInterests">0</strong><span class="muted">Интересов</span></div>
+          <div class="stat"><strong id="statLoaded">0</strong><span class="muted">Загружено в таблицу</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Места (посты)</h2>
+        <div class="toolbar" style="margin-bottom: 8px;">
+          <input id="postSearch" placeholder="Поиск по title/description/tags" oninput="renderPostRows()" />
+          <button class="ghost" onclick="clearPostSearch()">Сброс</button>
+        </div>
+        <div class="list">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 70px;">ID</th>
+                <th>Название</th>
+                <th style="width: 80px;">Автор</th>
+                <th style="width: 90px;">Рейтинг</th>
+                <th style="width: 120px;">Действие</th>
+              </tr>
+            </thead>
+            <tbody id="postsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>Редактировать пост (место)</h2>
-      <div class="row3">
-        <input id="postId" placeholder="post_id" />
-        <input id="postTitle" placeholder="title" />
-        <input id="postTags" placeholder="tags через запятую" />
+    <div class="col">
+      <div class="card">
+        <h2>Редактор места</h2>
+        <p class="muted" id="editorHint">Выбери место в таблице слева.</p>
+        <div class="col-gap" style="margin-top: 8px;">
+          <input id="editPostId" disabled placeholder="post_id" />
+          <input id="editPostTitle" placeholder="Название места" />
+          <textarea id="editPostDescription" placeholder="Описание"></textarea>
+          <input id="editPostTags" placeholder="Теги через запятую: музей, история" />
+          <div>
+            <p class="muted" style="margin-bottom: 6px;">Интересы места (клик для выбора):</p>
+            <div id="interestChips" class="chips"></div>
+          </div>
+          <div class="toolbar">
+            <button class="primary" onclick="saveSelectedPost()">Сохранить изменения</button>
+            <button class="danger" onclick="deleteSelectedPost()">Удалить место</button>
+          </div>
+        </div>
       </div>
-      <textarea id="postDescription" placeholder="description"></textarea>
-      <div class="row">
-        <input id="postInterestIds" placeholder="interestIds через запятую: 1,2" />
-        <button onclick="updatePost()">PATCH /api/admin/posts/{id}</button>
-      </div>
-    </div>
 
-    <div class="card">
-      <h2>Интересы</h2>
-      <div class="row3">
-        <input id="newInterestName" placeholder="Новый interest name" />
-        <button onclick="createInterest()">POST /api/admin/interests</button>
-        <div></div>
+      <div class="card">
+        <h2>Управление интересами</h2>
+        <div class="row" style="margin-bottom: 8px;">
+          <input id="newInterestName" placeholder="Новый интерес" />
+          <button class="primary" onclick="createInterest()">Создать</button>
+        </div>
+        <div class="list" id="interestsList"></div>
       </div>
-      <div class="row3">
-        <input id="interestId" placeholder="interest_id" />
-        <input id="interestName" placeholder="Новое имя" />
-        <button onclick="updateInterest()">PATCH /api/admin/interests/{id}</button>
-      </div>
-      <div class="row">
-        <input id="deleteInterestId" placeholder="interest_id для удаления" />
-        <button class="secondary" onclick="deleteInterest()">DELETE /api/admin/interests/{id}</button>
-      </div>
-    </div>
 
-    <div class="card">
-      <h2>Ответ</h2>
-      <pre id="result">Готово.</pre>
-    </div>
-
-    <div class="card">
-      <h2>Дашборд JSON</h2>
-      <pre id="dashboard">Нажми "Загрузить дашборд".</pre>
+      <div class="card">
+        <h2>Лог</h2>
+        <div id="status" class="status">Готово к работе.</div>
+      </div>
     </div>
   </div>
 
   <script>
+    const state = {
+      posts: [],
+      interests: [],
+      selectedPostId: null,
+      selectedInterestIds: new Set(),
+    };
+
     const api = async (url, method = 'GET', body = null) => {
       const headers = { 'Content-Type': 'application/json' };
       const res = await fetch(url, {
@@ -168,72 +344,233 @@ async def admin_editor_page():
       return payload;
     };
 
-    const setResult = (value) => {
-      document.getElementById('result').textContent =
-        typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+    const setStatus = (value, ok = true) => {
+      const el = document.getElementById('status');
+      el.style.color = ok ? 'var(--ok)' : 'var(--danger)';
+      el.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
     };
+
+    const byId = (id) => document.getElementById(id);
+
+    const normalize = (str) => (str || '').toLowerCase();
+
+    function clearPostSearch() {
+      byId('postSearch').value = '';
+      renderPostRows();
+    }
+
+    function renderStats(payload) {
+      byId('statPosts').textContent = String(payload.stats.totalPosts || 0);
+      byId('statInterests').textContent = String(payload.stats.totalInterests || 0);
+      byId('statLoaded').textContent = String(payload.posts.length || 0);
+      byId('postsPageInfo').textContent = String(payload.postsPage);
+      byId('interestsPageInfo').textContent = String(payload.interestsPage);
+    }
+
+    function renderPostRows() {
+      const tbody = byId('postsTableBody');
+      const q = normalize(byId('postSearch').value);
+      const rows = state.posts.filter((post) => {
+        const tags = (post.tags || []).join(' ');
+        return normalize(post.title).includes(q) || normalize(post.description).includes(q) || normalize(tags).includes(q);
+      });
+      tbody.innerHTML = rows.map((post) => {
+        const active = post.id === state.selectedPostId ? ' class="active"' : '';
+        return `
+          <tr${active}>
+            <td>#${post.id}</td>
+            <td>
+              <button class="post-title-btn" onclick="selectPost(${post.id})">${escapeHtml(post.title || 'Без названия')}</button>
+              <div class="muted">${escapeHtml((post.tags || []).join(', '))}</div>
+            </td>
+            <td>${post.authorId}</td>
+            <td>${post.averageRating == null ? '-' : post.averageRating}</td>
+            <td><button class="ghost" onclick="selectPost(${post.id})">Открыть</button></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderInterestChips() {
+      const chips = byId('interestChips');
+      chips.innerHTML = state.interests.map((interest) => {
+        const active = state.selectedInterestIds.has(interest.id) ? 'active' : '';
+        return `<span class="chip ${active}" onclick="toggleInterest(${interest.id})">${escapeHtml(interest.name)}</span>`;
+      }).join('');
+    }
+
+    function renderInterestsList() {
+      const list = byId('interestsList');
+      list.innerHTML = state.interests.map((item) => `
+        <div class="list-item">
+          <div>
+            <strong>#${item.id}</strong> ${escapeHtml(item.name)}
+            <div class="muted">${new Date(item.createdAt).toLocaleString()}</div>
+          </div>
+          <div class="toolbar">
+            <button class="ghost" onclick="renameInterestPrompt(${item.id}, '${escapeJs(item.name)}')">Переименовать</button>
+            <button class="danger" onclick="deleteInterest(${item.id})">Удалить</button>
+          </div>
+        </div>
+      `).join('') || '<div class="list-item"><span class="muted">Нет интересов на этой странице.</span></div>';
+    }
+
+    function selectPost(postId) {
+      const post = state.posts.find((p) => p.id === postId);
+      if (!post) return;
+      state.selectedPostId = post.id;
+      state.selectedInterestIds = new Set(post.interestIds || []);
+      byId('editPostId').value = String(post.id);
+      byId('editPostTitle').value = post.title || '';
+      byId('editPostDescription').value = post.description || '';
+      byId('editPostTags').value = (post.tags || []).join(', ');
+      byId('editorHint').textContent = `Редактируется место #${post.id}`;
+      renderPostRows();
+      renderInterestChips();
+    }
+
+    function toggleInterest(interestId) {
+      if (state.selectedPostId == null) {
+        setStatus('Сначала выбери место слева.', false);
+        return;
+      }
+      if (state.selectedInterestIds.has(interestId)) state.selectedInterestIds.delete(interestId);
+      else state.selectedInterestIds.add(interestId);
+      renderInterestChips();
+    }
 
     async function loadDashboard() {
       try {
         const payload = await api('/api/admin/dashboard');
-        document.getElementById('dashboard').textContent = JSON.stringify(payload, null, 2);
-        setResult('Dashboard loaded');
+        state.posts = payload.posts || [];
+        state.interests = payload.interests || [];
+        renderStats(payload);
+        renderPostRows();
+        renderInterestsList();
+        renderInterestChips();
+
+        if (state.posts.length && state.selectedPostId == null) {
+          selectPost(state.posts[0].id);
+        } else if (state.selectedPostId != null) {
+          const existing = state.posts.find((p) => p.id === state.selectedPostId);
+          if (existing) selectPost(existing.id);
+        }
+        setStatus('Данные обновлены');
       } catch (e) {
-        setResult('Ошибка: ' + e.message);
+        setStatus('Ошибка загрузки дашборда: ' + e.message, false);
       }
     }
 
-    async function updatePost() {
-      const postId = document.getElementById('postId').value.trim();
-      const title = document.getElementById('postTitle').value;
-      const description = document.getElementById('postDescription').value;
-      const tags = document.getElementById('postTags').value
+    async function saveSelectedPost() {
+      if (state.selectedPostId == null) {
+        setStatus('Сначала выбери место для редактирования.', false);
+        return;
+      }
+      const title = byId('editPostTitle').value.trim();
+      const description = byId('editPostDescription').value.trim();
+      const tags = byId('editPostTags').value
         .split(',').map(v => v.trim()).filter(Boolean);
-      const interestIds = document.getElementById('postInterestIds').value
-        .split(',').map(v => Number(v.trim())).filter(v => Number.isFinite(v));
+      const interestIds = Array.from(state.selectedInterestIds.values());
       try {
-        const payload = await api(`/api/admin/posts/${postId}`, 'PATCH', {
-          title: title || undefined,
+        const payload = await api(`/api/admin/posts/${state.selectedPostId}`, 'PATCH', {
+          title: title || null,
           description: description || undefined,
-          tags: tags.length ? tags : undefined,
-          interestIds: interestIds.length ? interestIds : undefined,
+          tags,
+          interestIds,
         });
-        setResult(payload);
+        setStatus(`Место #${payload.id} сохранено`);
+        await loadDashboard();
       } catch (e) {
-        setResult('Ошибка: ' + e.message);
+        setStatus('Ошибка сохранения места: ' + e.message, false);
+      }
+    }
+
+    async function deleteSelectedPost() {
+      if (state.selectedPostId == null) {
+        setStatus('Сначала выбери место для удаления.', false);
+        return;
+      }
+      const sure = window.confirm(`Удалить место #${state.selectedPostId}?`);
+      if (!sure) return;
+      try {
+        await api(`/api/posts/${state.selectedPostId}`, 'DELETE');
+        state.selectedPostId = null;
+        byId('editPostId').value = '';
+        byId('editPostTitle').value = '';
+        byId('editPostDescription').value = '';
+        byId('editPostTags').value = '';
+        byId('editorHint').textContent = 'Выбери место в таблице слева.';
+        setStatus('Место удалено');
+        await loadDashboard();
+      } catch (e) {
+        setStatus('Ошибка удаления места: ' + e.message, false);
       }
     }
 
     async function createInterest() {
-      const name = document.getElementById('newInterestName').value.trim();
+      const name = byId('newInterestName').value.trim();
+      if (!name) {
+        setStatus('Введите название интереса.', false);
+        return;
+      }
       try {
         const payload = await api('/api/admin/interests', 'POST', { name });
-        setResult(payload);
+        byId('newInterestName').value = '';
+        setStatus(`Создан интерес #${payload.id}: ${payload.name}`);
+        await loadDashboard();
       } catch (e) {
-        setResult('Ошибка: ' + e.message);
+        setStatus('Ошибка создания интереса: ' + e.message, false);
       }
     }
 
-    async function updateInterest() {
-      const id = document.getElementById('interestId').value.trim();
-      const name = document.getElementById('interestName').value.trim();
+    async function renameInterestPrompt(id, oldName) {
+      const name = window.prompt('Новое имя интереса:', oldName);
+      if (!name) return;
       try {
         const payload = await api(`/api/admin/interests/${id}`, 'PATCH', { name });
-        setResult(payload);
+        setStatus(`Интерес #${payload.id} переименован в "${payload.name}"`);
+        await loadDashboard();
       } catch (e) {
-        setResult('Ошибка: ' + e.message);
+        setStatus('Ошибка переименования интереса: ' + e.message, false);
       }
     }
 
-    async function deleteInterest() {
-      const id = document.getElementById('deleteInterestId').value.trim();
+    async function deleteInterest(id) {
+      const sure = window.confirm(`Удалить интерес #${id}?`);
+      if (!sure) return;
       try {
         await api(`/api/admin/interests/${id}`, 'DELETE');
-        setResult({ ok: true, deletedInterestId: id });
+        setStatus(`Интерес #${id} удален`);
+        await loadDashboard();
       } catch (e) {
-        setResult('Ошибка: ' + e.message);
+        setStatus('Ошибка удаления интереса: ' + e.message, false);
       }
     }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escapeJs(value) {
+      return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    window.loadDashboard = loadDashboard;
+    window.clearPostSearch = clearPostSearch;
+    window.selectPost = selectPost;
+    window.toggleInterest = toggleInterest;
+    window.saveSelectedPost = saveSelectedPost;
+    window.deleteSelectedPost = deleteSelectedPost;
+    window.createInterest = createInterest;
+    window.renameInterestPrompt = renameInterestPrompt;
+    window.deleteInterest = deleteInterest;
+
+    loadDashboard();
   </script>
 </body>
 </html>
