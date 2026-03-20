@@ -94,6 +94,8 @@ def _to_response(post: Post, average_rating: float | None = None) -> PostRespons
     "/posts",
     response_model=PostResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Создать пост",
+    description="Создает новый пост от имени текущего пользователя.",
 )
 async def create_post(
     payload: PostCreateRequest,
@@ -118,6 +120,8 @@ async def create_post(
 @router.get(
     "/posts",
     response_model=PostListResponse,
+    summary="Список постов",
+    description="Возвращает список постов с пагинацией.",
 )
 async def list_posts(
     page: int = Query(default=1, ge=1),
@@ -132,6 +136,8 @@ async def list_posts(
 @router.get(
     "/posts/{post_id}",
     response_model=PostResponse,
+    summary="Получить пост",
+    description="Возвращает один пост по его идентификатору.",
 )
 async def get_post(post_id: int, db: AsyncSession = Depends(get_db_session)):
     post, avg_rating = await _service(db).get_post_or_404(post_id)
@@ -141,6 +147,8 @@ async def get_post(post_id: int, db: AsyncSession = Depends(get_db_session)):
 @router.patch(
     "/posts/{post_id}",
     response_model=PostResponse,
+    summary="Обновить пост",
+    description="Частично обновляет пост. Доступно только автору поста.",
 )
 async def update_post(
     post_id: int,
@@ -167,6 +175,8 @@ async def update_post(
 @router.delete(
     "/posts/{post_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Удалить пост",
+    description="Удаляет пост. Доступно только автору поста.",
 )
 async def delete_post(
     post_id: int,
@@ -179,6 +189,8 @@ async def delete_post(
 @router.post(
     "/posts/{post_id}/interests/{interest_id}",
     response_model=PostResponse,
+    summary="Добавить интерес к посту",
+    description="Привязывает интерес к посту. Доступно только автору поста.",
 )
 async def add_interest_to_post(
     post_id: int,
@@ -196,6 +208,8 @@ async def add_interest_to_post(
 @router.delete(
     "/posts/{post_id}/interests/{interest_id}",
     response_model=PostResponse,
+    summary="Убрать интерес из поста",
+    description="Удаляет привязку интереса к посту. Доступно только автору поста.",
 )
 async def remove_interest_from_post(
     post_id: int,

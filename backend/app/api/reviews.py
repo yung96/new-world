@@ -65,6 +65,8 @@ def _to_response(review: Review) -> ReviewResponse:
     "/posts/{post_id}/reviews",
     response_model=ReviewResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Создать отзыв",
+    description="Создает отзыв к посту от имени текущего пользователя.",
 )
 async def create_review(
     post_id: int,
@@ -85,6 +87,8 @@ async def create_review(
 @router.get(
     "/posts/{post_id}/reviews",
     response_model=ReviewListResponse,
+    summary="Список отзывов поста",
+    description="Возвращает отзывы к посту с пагинацией.",
 )
 async def list_reviews(
     post_id: int,
@@ -106,6 +110,8 @@ async def list_reviews(
 @router.delete(
     "/reviews/{review_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Удалить отзыв",
+    description="Удаляет отзыв. Доступно только автору отзыва.",
 )
 async def delete_review(
     review_id: int,

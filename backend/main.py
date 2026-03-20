@@ -34,6 +34,7 @@ OPENAPI_TAGS = [
         "description": "Загрузка и получение файлов (изображений) для контента.",
     },
 ]
+
 fastapi_app = FastAPI(
     title="Kraeved API",
     summary="REST API для социальной платформы о локальной культуре и путешествиях.",

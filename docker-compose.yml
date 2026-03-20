@@ -14,6 +14,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks:
+      - internal
 
   redis:
     image: redis:latest
@@ -28,6 +30,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks:
+      - internal
 
 
   api:
@@ -58,6 +62,16 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 10
+    networks:
+      - internal
+      - shared_proxy
 volumes:
   pgdata:
   redisdata:
+
+networks:
+  internal:
+    driver: bridge
+  shared_proxy:
+    name: shared_proxy
+    external: true
