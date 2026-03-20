@@ -19,7 +19,8 @@ def _service(db: AsyncSession) -> PostService:
     response_model=PostResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Создать место (пост) как пользователь",
-    description="Обычный user endpoint для создания поста.",
+    description="Пользователь создает новое место. Возвращает созданный объект поста.",
+    response_description="Созданное место.",
 )
 async def user_create_post(
     payload: PostCreateRequest,
@@ -58,6 +59,7 @@ async def user_create_post(
     "/favorites/{post_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Добавить место в избранное",
+    description="Добавляет место в персональный список избранного текущего пользователя.",
 )
 async def add_to_favorites(
     post_id: int,
@@ -71,6 +73,7 @@ async def add_to_favorites(
     "/favorites/{post_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Убрать место из избранного",
+    description="Удаляет место из персонального списка избранного текущего пользователя.",
 )
 async def remove_from_favorites(
     post_id: int,
@@ -84,6 +87,8 @@ async def remove_from_favorites(
     "/favorites",
     response_model=PostListResponse,
     summary="Список избранных мест пользователя",
+    description="Возвращает пагинированный список избранных мест текущего пользователя.",
+    response_description="Список избранных мест.",
 )
 async def list_favorites(
     page: int = Query(default=1, ge=1),

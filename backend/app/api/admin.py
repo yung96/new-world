@@ -633,7 +633,13 @@ async def admin_editor_page():
 """
 
 
-@router.get("/dashboard", response_model=AdminDashboardResponse)
+@router.get(
+    "/dashboard",
+    response_model=AdminDashboardResponse,
+    summary="Admin dashboard данные",
+    description="Агрегированные данные для обезличенного admin-дашборда MVP.",
+    response_description="Статистика, места, интересы и пользователи с весами интересов.",
+)
 async def get_admin_dashboard(
     postsPage: int = Query(default=1, ge=1),
     postsPageSize: int = Query(default=20, ge=1, le=100),
@@ -643,6 +649,13 @@ async def get_admin_dashboard(
     usersPageSize: int = Query(default=50, ge=1, le=100),
     db: AsyncSession = Depends(get_db_session),
 ):
+    """
+    Возвращает агрегированные данные для админского UI:
+    - статистику;
+    - список мест;
+    - список интересов;
+    - список пользователей с интересами и весами.
+    """
     post_rows, _ = await _post_service(db).list_posts(page=postsPage, page_size=postsPageSize)
     interests, _ = await _social_service(db).list_interests(
         page=interestsPage, page_size=interestsPageSize
@@ -726,12 +739,19 @@ async def get_admin_dashboard(
     )
 
 
-@router.patch("/posts/{post_id}", response_model=AdminPostCard)
+@router.patch(
+    "/posts/{post_id}",
+    response_model=AdminPostCard,
+    summary="Admin: редактировать место",
+    description="Частично обновляет место (пост) в административном интерфейсе.",
+    response_description="Обновленное место.",
+)
 async def admin_update_post(
     post_id: int,
     payload: AdminPostUpdateRequest,
     db: AsyncSession = Depends(get_db_session),
 ):
+    """Редактирование места через admin API."""
     post = await _post_service(db).admin_update_post(
         post_id=post_id,
         title=payload.title,
@@ -756,31 +776,51 @@ async def admin_update_post(
     )
 
 
-@router.post("/interests", response_model=AdminInterestCard)
+@router.post(
+    "/interests",
+    response_model=AdminInterestCard,
+    summary="Admin: создать интерес",
+    description="Создает новый интерес в справочнике интересов.",
+    response_description="Созданный интерес.",
+)
 async def admin_create_interest(
     payload: AdminInterestCreateRequest,
     db: AsyncSession = Depends(get_db_session),
 ):
+    """Создание интереса через admin API."""
     interest = await _social_service(db).create_interest(payload.name)
     return AdminInterestCard(id=interest.id, name=interest.name, createdAt=interest.created_at)
 
 
-@router.patch("/interests/{interest_id}", response_model=AdminInterestCard)
+@router.patch(
+    "/interests/{interest_id}",
+    response_model=AdminInterestCard,
+    summary="Admin: переименовать интерес",
+    description="Обновляет название существующего интереса.",
+    response_description="Обновленный интерес.",
+)
 async def admin_update_interest(
     interest_id: int,
     payload: AdminInterestUpdateRequest,
     db: AsyncSession = Depends(get_db_session),
 ):
+    """Переименование интереса через admin API."""
     interest = await _social_service(db).update_interest(
         interest_id=interest_id, name=payload.name
     )
     return AdminInterestCard(id=interest.id, name=interest.name, createdAt=interest.created_at)
 
 
-@router.delete("/interests/{interest_id}", status_code=204)
+@router.delete(
+    "/interests/{interest_id}",
+    status_code=204,
+    summary="Admin: удалить интерес",
+    description="Удаляет интерес из справочника.",
+)
 async def admin_delete_interest(
     interest_id: int,
     db: AsyncSession = Depends(get_db_session),
 ):
+    """Удаление интереса через admin API."""
     await _social_service(db).delete_interest(interest_id)
 

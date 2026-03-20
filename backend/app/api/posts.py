@@ -143,7 +143,8 @@ async def get_post(post_id: int, db: AsyncSession = Depends(get_db_session)):
     "/posts/{post_id}",
     response_model=PostResponse,
     summary="Обновить пост",
-    description="Частично обновляет пост. Админский сценарий для MVP.",
+    description="Частично обновляет пост/место. В текущем MVP используется как административный сценарий.",
+    response_description="Обновленное место.",
 )
 async def update_post(
     post_id: int,
@@ -168,7 +169,7 @@ async def update_post(
     "/posts/{post_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Удалить пост",
-    description="Удаляет пост. Админский сценарий для MVP.",
+    description="Удаляет пост/место. В текущем MVP используется как административный сценарий.",
 )
 async def delete_post(
     post_id: int,
@@ -181,7 +182,8 @@ async def delete_post(
     "/posts/{post_id}/interests/{interest_id}",
     response_model=PostResponse,
     summary="Добавить интерес к посту",
-    description="Привязывает интерес к посту. Админский сценарий для MVP.",
+    description="Привязывает интерес к посту/месту. В текущем MVP используется как административный сценарий.",
+    response_description="Обновленное место с новым списком интересов.",
 )
 async def add_interest_to_post(
     post_id: int,
@@ -197,7 +199,8 @@ async def add_interest_to_post(
     "/posts/{post_id}/interests/{interest_id}",
     response_model=PostResponse,
     summary="Убрать интерес из поста",
-    description="Удаляет привязку интереса к посту. Админский сценарий для MVP.",
+    description="Удаляет привязку интереса к посту/месту. В текущем MVP используется как административный сценарий.",
+    response_description="Обновленное место с новым списком интересов.",
 )
 async def remove_interest_from_post(
     post_id: int,
