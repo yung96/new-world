@@ -19,6 +19,14 @@ export const postsApi = {
     request(`/api/posts/${postId}/interests/${interestId}`, { method: 'DELETE', auth: true }),
 }
 
+export const favoritesApi = {
+  list: ({ page = 1, pageSize = 20 } = {}) =>
+    request('/api/user/favorites', { query: { page, pageSize }, auth: true }),
+  add: (postId) => request(`/api/user/favorites/${postId}`, { method: 'POST', auth: true }),
+  remove: (postId) =>
+    request(`/api/user/favorites/${postId}`, { method: 'DELETE', auth: true }),
+}
+
 export const reviewsApi = {
   listByPost: (postId, { page = 1, pageSize = 20 } = {}) =>
     request(`/api/posts/${postId}/reviews`, { query: { page, pageSize } }),

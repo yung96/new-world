@@ -8,6 +8,7 @@ from app.models.achievement import Achievement
 from app.models.associations import (
     post_interests,
     user_achievements,
+    user_favorite_posts,
     user_friends,
     user_interests,
 )
@@ -27,6 +28,7 @@ __all__ = [
     "User",
     "post_interests",
     "user_achievements",
+    "user_favorite_posts",
     "user_friends",
     "user_interests",
 ]

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { reviewsApi, postsApi } from '../shared/api/endpoints'
+import { favoritesApi, reviewsApi, postsApi } from '../shared/api/endpoints'
 import { Card } from '../shared/ui/Card'
 import { fileUrl } from '../shared/api/client'
 import { formatDateTime } from '../shared/lib/format'
@@ -12,6 +12,7 @@ export function PostDetailsPage() {
   const { postId } = useParams()
   const queryClient = useQueryClient()
   const me = useSessionStore((state) => state.user)
+  const token = useSessionStore((state) => state.token)
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' })
   const [reviewsPage, setReviewsPage] = useState(1)
 
@@ -24,6 +25,11 @@ export function PostDetailsPage() {
     queryKey: ['reviews', postId, reviewsPage],
     queryFn: () => reviewsApi.listByPost(postId, { page: reviewsPage, pageSize: 10 }),
     enabled: Boolean(postId),
+  })
+  const favoritesQuery = useQuery({
+    queryKey: ['favorites', 'ids'],
+    queryFn: () => favoritesApi.list({ page: 1, pageSize: 100 }),
+    enabled: Boolean(token),
   })
 
   const refetchAll = () => {
@@ -49,11 +55,17 @@ export function PostDetailsPage() {
     mutationFn: (reviewId) => reviewsApi.remove(reviewId),
     onSuccess: refetchAll,
   })
+  const favoriteMutation = useMutation({
+    mutationFn: ({ id, isFavorite }) =>
+      isFavorite ? favoritesApi.remove(id) : favoritesApi.add(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['favorites'] }),
+  })
 
   if (postQuery.isLoading) return <Card>Загрузка поста...</Card>
   if (postQuery.isError) return <Card>Ошибка: {normalizeError(postQuery.error)}</Card>
 
   const post = postQuery.data
+  const isFavorite = (favoritesQuery.data?.items || []).some((item) => item.id === post.id)
   return (
     <div className="space-y-4 pb-24 md:pb-0">
       <Card
@@ -86,6 +98,19 @@ export function PostDetailsPage() {
             <p className="mt-2 text-xs text-zinc-500">
               {post.averageRating ? `Rating: ${post.averageRating}/5` : 'Нет рейтинга'}
             </p>
+            {token ? (
+              <button
+                type="button"
+                onClick={() => favoriteMutation.mutate({ id: post.id, isFavorite })}
+                className={`mt-2 rounded-md border px-3 py-1 text-xs ${
+                  isFavorite
+                    ? 'border-amber-300 bg-amber-50 text-amber-700'
+                    : 'border-zinc-300 text-zinc-700'
+                }`}
+              >
+                {isFavorite ? 'В избранном' : 'Добавить в избранное'}
+              </button>
+            ) : null}
           </div>
           <div className="px-4 text-xs text-zinc-500">Пост #{post.id}</div>
 

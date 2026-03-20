@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { useSessionStore } from '../app/store/sessionStore'
-import { authApi } from '../shared/api/endpoints'
+import { authApi, favoritesApi } from '../shared/api/endpoints'
 import { Card } from '../shared/ui/Card'
 import { formatDateTime } from '../shared/lib/format'
 import { normalizeError } from '../shared/lib/errors'
@@ -21,6 +22,11 @@ export function ProfilePage() {
   const refreshMeMutation = useMutation({
     mutationFn: authApi.me,
     onSuccess: (freshUser) => setUser(freshUser),
+  })
+  const favoritesQuery = useQuery({
+    queryKey: ['favorites', 'profile'],
+    queryFn: () => favoritesApi.list({ page: 1, pageSize: 50 }),
+    enabled: Boolean(token),
   })
 
   return (
@@ -63,6 +69,26 @@ export function ProfilePage() {
           >
             Очистить сессию
           </button>
+        </div>
+      </Card>
+      <Card title="Избранные места" subtitle="Список из /api/user/favorites">
+        {favoritesQuery.isLoading ? <p className="text-sm text-zinc-500">Загрузка...</p> : null}
+        {favoritesQuery.isError ? (
+          <p className="text-sm text-rose-600">{normalizeError(favoritesQuery.error)}</p>
+        ) : null}
+        <div className="space-y-2">
+          {favoritesQuery.data?.items?.map((post) => (
+            <div key={post.id} className="rounded-xl border border-zinc-200 p-3">
+              <p className="text-sm font-semibold">{post.title}</p>
+              <p className="text-xs text-zinc-500">#{post.id} · @{post.author.phone}</p>
+              <Link to={`/posts/${post.id}`} className="mt-2 inline-block text-xs text-indigo-700">
+                Открыть
+              </Link>
+            </div>
+          ))}
+          {!favoritesQuery.isLoading && !favoritesQuery.data?.items?.length ? (
+            <p className="text-sm text-zinc-500">Избранное пока пустое.</p>
+          ) : null}
         </div>
       </Card>
     </div>

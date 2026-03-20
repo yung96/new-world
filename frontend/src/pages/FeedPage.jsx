@@ -1,11 +1,12 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { postsApi, systemApi } from '../shared/api/endpoints'
+import { favoritesApi, postsApi, systemApi } from '../shared/api/endpoints'
 import { Card } from '../shared/ui/Card'
 import { fileUrl } from '../shared/api/client'
 import { formatDateTime } from '../shared/lib/format'
 import { normalizeError } from '../shared/lib/errors'
+import { useSessionStore } from '../app/store/sessionStore'
 
 const stories = [
   'ivan',
@@ -17,6 +18,8 @@ const stories = [
 ]
 
 export function FeedPage() {
+  const queryClient = useQueryClient()
+  const token = useSessionStore((state) => state.token)
   const [page, setPage] = useState(1)
 
   const pingQuery = useQuery({
@@ -28,6 +31,22 @@ export function FeedPage() {
     queryKey: ['posts', page],
     queryFn: () => postsApi.list({ page, pageSize: 10 }),
   })
+
+  const favoritesQuery = useQuery({
+    queryKey: ['favorites', 'ids'],
+    queryFn: () => favoritesApi.list({ page: 1, pageSize: 100 }),
+    enabled: Boolean(token),
+  })
+
+  const favoriteMutation = useMutation({
+    mutationFn: ({ postId, isFavorite }) =>
+      isFavorite ? favoritesApi.remove(postId) : favoritesApi.add(postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites'] })
+    },
+  })
+
+  const favoriteIds = new Set((favoritesQuery.data?.items || []).map((item) => item.id))
 
   return (
     <div className="space-y-4 pb-24 md:pb-0">
@@ -101,6 +120,22 @@ export function FeedPage() {
                 <span>like</span>
                 <span>comment</span>
                 <span>share</span>
+                {token ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      favoriteMutation.mutate({
+                        postId: post.id,
+                        isFavorite: favoriteIds.has(post.id),
+                      })
+                    }
+                    className={`text-sm ${
+                      favoriteIds.has(post.id) ? 'font-semibold text-amber-600' : 'text-zinc-600'
+                    }`}
+                  >
+                    {favoriteIds.has(post.id) ? 'saved' : 'save'}
+                  </button>
+                ) : null}
               </div>
               <p className="text-sm font-semibold">{post.title}</p>
               {post.description ? <p className="mt-1 text-sm text-zinc-700">{post.description}</p> : null}

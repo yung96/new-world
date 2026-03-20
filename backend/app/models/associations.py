@@ -35,3 +35,12 @@ user_friends = Table(
     Column("friend_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
     UniqueConstraint("user_id", "friend_id", name="uq_user_friend_pair"),
 )
+
+
+user_favorite_posts = Table(
+    "user_favorite_posts",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("post_id", Integer, ForeignKey("posts.id", ondelete="CASCADE"), primary_key=True),
+    UniqueConstraint("user_id", "post_id", name="uq_user_favorite_post_pair"),
+)

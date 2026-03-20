@@ -2,7 +2,12 @@ from sqlalchemy import Column, DateTime, Integer, String, func
 from sqlalchemy.orm import relationship
 
 from app.models import Base
-from app.models.associations import user_achievements, user_friends, user_interests
+from app.models.associations import (
+    user_achievements,
+    user_favorite_posts,
+    user_friends,
+    user_interests,
+)
 
 
 class User(Base):
@@ -23,6 +28,9 @@ class User(Base):
     )
     interests = relationship(
         "Interest", secondary=user_interests, back_populates="users"
+    )
+    favorite_posts = relationship(
+        "Post", secondary=user_favorite_posts, back_populates="favorited_by_users"
     )
 
     friends = relationship(

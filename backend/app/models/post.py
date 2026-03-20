@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from app.models import Base
-from app.models.associations import post_interests
+from app.models.associations import post_interests, user_favorite_posts
 
 
 class Season(str, enum.Enum):
@@ -32,3 +32,6 @@ class Post(Base):
     author = relationship("User", back_populates="posts")
     reviews = relationship("Review", back_populates="post", cascade="all, delete-orphan")
     interests = relationship("Interest", secondary=post_interests, back_populates="posts")
+    favorited_by_users = relationship(
+        "User", secondary=user_favorite_posts, back_populates="favorite_posts"
+    )

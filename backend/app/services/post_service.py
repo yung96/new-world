@@ -5,6 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.associations import user_favorite_posts
 from app.models.interest import Interest
 from app.models.post import Post, Season
 from app.models.review import Review
@@ -221,3 +222,56 @@ class PostService:
         if len(interests) != len(unique_ids):
             raise HTTPException(status_code=404, detail="Some interests not found")
         return interests
+
+    async def add_favorite(self, *, user: User, post_id: int) -> None:
+        await self.get_post_or_404(post_id)
+        exists_stmt = select(user_favorite_posts.c.user_id).where(
+            user_favorite_posts.c.user_id == user.id,
+            user_favorite_posts.c.post_id == post_id,
+        )
+        exists = (await self.db.execute(exists_stmt)).first() is not None
+        if not exists:
+            await self.db.execute(
+                user_favorite_posts.insert().values(user_id=user.id, post_id=post_id)
+            )
+            await self.db.commit()
+
+    async def remove_favorite(self, *, user: User, post_id: int) -> None:
+        await self.db.execute(
+            user_favorite_posts.delete().where(
+                user_favorite_posts.c.user_id == user.id,
+                user_favorite_posts.c.post_id == post_id,
+            )
+        )
+        await self.db.commit()
+
+    async def list_favorites(
+        self, *, user: User, page: int, page_size: int
+    ) -> tuple[list[tuple[Post, float | None]], int]:
+        offset = (page - 1) * page_size
+        total_stmt = select(func.count()).select_from(user_favorite_posts).where(
+            user_favorite_posts.c.user_id == user.id
+        )
+        total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
+
+        rating_subquery = (
+            select(
+                Review.post_id.label("post_id"),
+                func.avg(Review.rating).label("avg_rating"),
+            )
+            .group_by(Review.post_id)
+            .subquery()
+        )
+
+        stmt = (
+            select(Post, rating_subquery.c.avg_rating)
+            .join(user_favorite_posts, user_favorite_posts.c.post_id == Post.id)
+            .outerjoin(rating_subquery, rating_subquery.c.post_id == Post.id)
+            .where(user_favorite_posts.c.user_id == user.id)
+            .options(selectinload(Post.author), selectinload(Post.interests))
+            .order_by(Post.created_at.desc(), Post.id.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        rows = (await self.db.execute(stmt)).all()
+        return rows, total
