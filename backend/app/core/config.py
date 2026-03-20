@@ -77,6 +77,10 @@ class Settings(BaseSettings):
         description="Возраст файла (сек.), после которого orphan может быть удален",
     )
 
+    GPT_CLIENT_BASE_URL: str
+    GPT_CLIENT_KEY: str
+    GPT_MODEL: str
+
     @property
     def frontend_cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.frontend_cors_origins.split(",") if o.strip()]
