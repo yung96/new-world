@@ -10,7 +10,7 @@ from app.services.user_service import get_or_create_user
 async def test_interest_weight_defaults_to_one_after_binding(db_session):
     user = await get_or_create_user(db_session, phone="+79990001001")
     service = SocialService(db_session)
-    interest = await service.create_interest("Вино")
+    interest = await service.create_interest("Вино", "🪁")
 
     await service.add_interest_to_user(user=user, interest_id=interest.id)
 
@@ -28,7 +28,7 @@ async def test_interest_weight_defaults_to_one_after_binding(db_session):
 async def test_set_interest_weight_for_user_updates_value(db_session):
     user = await get_or_create_user(db_session, phone="+79990001002")
     service = SocialService(db_session)
-    interest = await service.create_interest("Пешие прогулки")
+    interest = await service.create_interest("Пешие прогулки", "🪁")
     await service.add_interest_to_user(user=user, interest_id=interest.id)
 
     await service.set_interest_weight_for_user(
@@ -42,7 +42,7 @@ async def test_set_interest_weight_for_user_updates_value(db_session):
 async def test_set_interest_weight_for_unbound_interest_returns_404(db_session):
     user = await get_or_create_user(db_session, phone="+79990001003")
     service = SocialService(db_session)
-    interest = await service.create_interest("Активный спорт")
+    interest = await service.create_interest("Активный спорт", "🪁")
 
     with pytest.raises(HTTPException) as exc:
         await service.set_interest_weight_for_user(
@@ -71,9 +71,9 @@ async def test_interests_bulk_create(db_session):
     service = SocialService(db_session)
 
     # создаем интересы
-    interest1 = await service.create_interest("Кино")
-    interest2 = await service.create_interest("Музыка")
-    interest3 = await service.create_interest("Спорт")
+    interest1 = await service.create_interest("Кино", "🪁")
+    interest2 = await service.create_interest("Музыка", "🪁")
+    interest3 = await service.create_interest("Спорт", "🪁")
 
     # добавляем bulk
     await service.add_interests_to_user(

@@ -23,12 +23,14 @@ class UserCompactResponse(BasePydanticModel):
 
 class InterestRequest(BasePydanticModel):
     name: str
+    emoji: str
 
 
 class InterestResponse(BasePydanticModel):
     id: int
     name: str
     name_en: str
+    emoji: str
 
 
 class AchievementRequest(BasePydanticModel):
@@ -128,7 +130,7 @@ async def create_interest(
     _current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    item = await _service(db).create_interest(payload.name)
+    item = await _service(db).create_interest(payload.name, payload.emoji)
     return _interest_to_response(item)
 
 

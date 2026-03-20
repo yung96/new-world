@@ -10,7 +10,7 @@ class Interest(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False, unique=True, index=True)
-    name_en = Column(String, nullable=False, unique=True, index=True)
+    emoji = Column(String, nullable=False, unique=True, index=True)
 
     users = relationship("User", secondary=user_interests, back_populates="interests")
     posts = relationship("Post", secondary=post_interests, back_populates="interests")
