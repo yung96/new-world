@@ -13,6 +13,7 @@ from app.models.friend_request import FriendRequest, FriendRequestStatus
 from app.models.interest import Interest
 from app.models.user import User
 from app.services.social_service import SocialService
+from app.services.gpt_service import GptService
 
 router = APIRouter()
 
@@ -86,8 +87,16 @@ class PaginatedFriendsResponse(BasePydanticModel):
     pageSize: int
 
 
+class GeneratedInterest(BasePydanticModel):
+    ids: list[int]
+
+
 def _service(db: AsyncSession) -> SocialService:
     return SocialService(db)
+
+
+def _gpt_service() -> GptService:
+    return GptService()
 
 
 def _interest_to_response(item: Interest) -> InterestResponse:
@@ -165,6 +174,38 @@ async def add_interests(
     items, total = await _service(db).add_interests_to_user(
         user=_current_user,
         interest_ids=interest_ids,
+    )
+    return PaginatedInterestsResponse(
+        items=[_interest_to_response(item) for item in items],
+        total=total,
+        page=1,
+        pageSize=100,
+    )
+
+
+@router.post("/interests/generate", response_model=PaginatedInterestsResponse)
+async def generate_interests(
+    user_data: str = ...,
+    _current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    # NOTE: 100 интересов учитываются, по-хорошему надо все.
+    items, total = await _service(db).list_interests(page=1, page_size=100)
+
+    sys_prompt = (
+        f"Тебе необходимо выделить основные интересы на основе "
+        f"пользовательского ввода, которые есть в нашей системе {items}"
+    )
+    user_prompt = user_data
+    generated_interests, _ = await _gpt_service().request_openai_pydantic_response(
+        sys_prompt=sys_prompt,
+        user_prompt=user_prompt,
+        response_model=GeneratedInterest,
+    )
+
+    items, total = await _service(db).add_interests_to_user(
+        user=_current_user,
+        interest_ids=generated_interests.ids,
     )
     return PaginatedInterestsResponse(
         items=[_interest_to_response(item) for item in items],

@@ -103,6 +103,10 @@ class SocialService:
         user = await self.get_user_or_404(user.id)
         return user
 
+    async def get_interests_by_user(self, user_id: int) -> list[Interest]:
+        # NOTE: далее понадобится.
+        ...
+
     async def add_interests_to_user(
         self,
         *,
