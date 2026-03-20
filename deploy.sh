@@ -30,5 +30,8 @@ fi
 # Сборка и запуск контейнеров
 echo "Stopping old containers..."
 docker compose down --remove-orphans || true
+echo "Cleaning conflicting containers..."
+docker rm -f kraeved_redis || true
+docker rm -f postgres || true
 echo "Starting new containers..."
 docker compose up -d --build
