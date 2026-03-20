@@ -98,6 +98,7 @@ def _interest_to_response(item: Interest) -> InterestResponse:
             separator="_",
             allow_unicode=False,
         ),
+        emoji=item.emoji,
     )
 
 
