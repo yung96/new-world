@@ -15,12 +15,16 @@ ssh-keyscan github.com >> ~/.ssh/known_hosts
 mkdir -p "$REPO_DIR"
 cd "$REPO_DIR" || exit 1
 
-# Клонируем или обновляем репозиторий с использованием конкретного SSH-ключа
-if [ ! -d ".git" ]; then
-    GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes" git clone -b dev "$GIT_REPO_URL" .
+if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+    echo "Updating repo..."
+    GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes" git fetch origin main
+    GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes" git reset --hard origin/main
 else
-    GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes" git fetch origin dev
-    GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes" git reset --hard origin/dev
+    echo "Cloning repo..."
+    rm -rf "$REPO_DIR"
+    mkdir -p "$REPO_DIR"
+    cd "$REPO_DIR"
+    GIT_SSH_COMMAND="ssh -i $SSH_KEY -o IdentitiesOnly=yes" git clone -b main "$GIT_REPO_URL" .
 fi
 
 # Сборка и запуск контейнеров
