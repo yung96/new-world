@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from app.core.lifespan import lifespan
 from app.core.dependencies import get_db_session
-from app.api import auth, posts, reviews, social, uploads
+from app.api import admin, auth, posts, reviews, social, uploads, user
 
 OPENAPI_TAGS = [
     {
@@ -32,6 +32,14 @@ OPENAPI_TAGS = [
     {
         "name": "Uploads",
         "description": "Загрузка и получение файлов (изображений) для контента.",
+    },
+    {
+        "name": "User",
+        "description": "Обычные пользовательские endpoint-ы.",
+    },
+    {
+        "name": "Admin",
+        "description": "Обезличенные admin endpoint-ы (доступ по X-Admin-Key).",
     },
 ]
 
@@ -168,4 +176,6 @@ api_router.include_router(social.router, tags=["Social"])
 api_router.include_router(posts.router, tags=["Posts"])
 api_router.include_router(reviews.router, tags=["Reviews"])
 api_router.include_router(uploads.router, tags=["Uploads"])
+api_router.include_router(user.router, tags=["User"])
+api_router.include_router(admin.router, tags=["Admin"])
 fastapi_app.include_router(api_router)

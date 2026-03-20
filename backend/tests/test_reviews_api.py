@@ -16,7 +16,6 @@ async def _create_post(client, headers: dict[str, str]) -> int:
             "geoLng": None,
             "interestIds": [],
             "tags": [],
-            "season": "winter",
         },
         headers=headers,
     )

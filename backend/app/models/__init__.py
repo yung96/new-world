@@ -13,7 +13,7 @@ from app.models.associations import (
 )
 from app.models.friend_request import FriendRequest, FriendRequestStatus
 from app.models.interest import Interest
-from app.models.post import Post, Season
+from app.models.post import Post
 from app.models.review import Review
 from app.models.user import User
 
@@ -24,7 +24,6 @@ __all__ = [
     "Interest",
     "Post",
     "Review",
-    "Season",
     "User",
     "post_interests",
     "user_achievements",

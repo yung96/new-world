@@ -49,6 +49,25 @@ class SocialService:
         await self.db.delete(interest)
         await self.db.commit()
 
+    async def update_interest(self, *, interest_id: int, name: str) -> Interest:
+        interest = await self.db.get(Interest, interest_id)
+        if interest is None:
+            raise HTTPException(status_code=404, detail="Interest not found")
+        normalized = (name or "").strip()
+        if not normalized:
+            raise HTTPException(status_code=400, detail="Interest name is required")
+        duplicate = (
+            await self.db.execute(
+                select(Interest).where(Interest.name == normalized, Interest.id != interest_id)
+            )
+        ).scalar_one_or_none()
+        if duplicate is not None:
+            raise HTTPException(status_code=409, detail="Interest with this name already exists")
+        interest.name = normalized
+        await self.db.commit()
+        await self.db.refresh(interest)
+        return interest
+
     async def add_interest_to_user(self, *, user: User, interest_id: int) -> User:
         interest = await self.db.get(Interest, interest_id)
         if interest is None:
