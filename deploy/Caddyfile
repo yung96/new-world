@@ -2,6 +2,15 @@
     email {env.ACME_EMAIL}
 }
 
+apikraeved.tw1.su {
+    encode zstd gzip
+
+    reverse_proxy kraeved_api:8000 {
+        header_up X-Forwarded-Proto {scheme}
+        header_up Host {host}
+    }
+}
+
 {$DOMAIN:localhost} {
     encode zstd gzip
 

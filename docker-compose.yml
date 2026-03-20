@@ -39,7 +39,7 @@ services:
     env_file:
       - ./backend/.env
     ports:
-      - "127.0.0.1:18000:8000"
+      - "18000:8000"
     volumes:
       - ./backend/uploads:/app/uploads
     depends_on:
