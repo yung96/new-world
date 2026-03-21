@@ -122,10 +122,12 @@ async def test_feed_includes_popular_signal(db_session):
         season=Season.autumn,
         interest_ids=[i2.id],
     )
-    for _ in range(5):
+    # Одна пара (автор, пост) — один отзыв (uq_review_per_user_post); набираем «массу» разными авторами.
+    for i in range(5):
+        u = await get_or_create_user(db_session, phone=f"+799900031{i:02d}")
         db_session.add(
             Review(
-                author_id=user.id,
+                author_id=u.id,
                 post_id=p_hot.id,
                 rating=5,
                 comment=None,

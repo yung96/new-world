@@ -48,6 +48,7 @@ class UserPublicReviewItem(BasePydanticModel):
     id: int = Field(description="Идентификатор отзыва.")
     postId: int = Field(description="Идентификатор карточки места.")
     postTitle: str = Field(description="Название места.")
+    postCity: str | None = Field(description="Город места (если указан у поста).")
     postRegionId: int | None = Field(description="Идентификатор региона места.")
     rating: int = Field(description="Оценка 1–5.")
     comment: str | None = Field(description="Текст отзыва.")
@@ -98,6 +99,7 @@ def _review_to_public_item(review: Review) -> UserPublicReviewItem:
         id=review.id,
         postId=review.post_id,
         postTitle=review.post.title,
+        postCity=review.post.city,
         postRegionId=review.post.region_id,
         rating=review.rating,
         comment=review.comment,

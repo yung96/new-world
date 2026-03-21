@@ -1,16 +1,18 @@
 import math
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer
 
 from pydantic import Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
 from app.api.base_schema import BasePydanticModel
-
+from app.core.dependencies import get_db_session
 from app.models.user import User
+from app.services.travel_plan_service import TravelPlanService
 from app.services.travel_service import TravelService
 
 
@@ -212,9 +214,9 @@ class RouteInfoResponseDTO(BasePydanticModel):
 
 # --- Настройка FastAPI ---
 
-router = APIRouter()
+router = APIRouter(prefix="/travel")
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/travel",
+    tokenUrl="/api/auth",
     description="Построение маршрутов",
 )
 
@@ -323,3 +325,60 @@ async def get_weather_info(
     service: TravelService = Depends(get_travel_service),
 ):
     return await service.get_weather_info(lat=lat, lon=lon)
+
+
+class TravelPlanRequestDTO(BasePydanticModel):
+    originCity: str
+    destinationCity: str
+    dayCount: int | None = Field(default=None, ge=2, le=14)
+    startDate: str | None = None
+    endDate: str | None = None
+    skipLlm: bool = False
+
+
+@router.post(
+    "/plan",
+    status_code=status.HTTP_200_OK,
+    summary="Персональный план поездки (перелёт + дни в городе)",
+)
+async def post_travel_plan(
+    body: TravelPlanRequestDTO,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    start_d: date | None = None
+    end_d: date | None = None
+    if body.startDate:
+        try:
+            start_d = date.fromisoformat(body.startDate[:10])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail="Invalid startDate") from e
+    if body.endDate:
+        try:
+            end_d = date.fromisoformat(body.endDate[:10])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail="Invalid endDate") from e
+
+    svc = TravelPlanService(db)
+    try:
+        result = await svc.build_plan(
+            user=current_user,
+            origin_city=body.originCity,
+            destination_city=body.destinationCity,
+            start_date=start_d,
+            end_date=end_d,
+            day_count=body.dayCount,
+            skip_llm=body.skipLlm,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    return {
+        "intro": result.intro,
+        "usedLlm": result.used_llm,
+        "resolvedMode": result.resolved_mode,
+        "warnings": result.warnings,
+        "flightOffers": result.flight_offers,
+        "externalCatalog": result.external_catalog,
+        "days": result.days,
+    }

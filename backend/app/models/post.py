@@ -27,6 +27,7 @@ class Post(Base):
     author_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
+    city = Column(String, nullable=True)
     geo_lat = Column(Float, nullable=True)
     geo_lng = Column(Float, nullable=True)
     season = Column(Enum(Season, name="season_enum"), nullable=False)

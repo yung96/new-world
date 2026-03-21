@@ -22,6 +22,7 @@ class PostService:
         *,
         author: User,
         title: str,
+        city: str | None = None,
         description: str | None,
         geo_lat: float | None,
         geo_lng: float | None,
@@ -32,6 +33,7 @@ class PostService:
         post = Post(
             author_id=author.id,
             title=title.strip(),
+            city=city.strip() if city else None,
             description=description,
             geo_lat=geo_lat,
             geo_lng=geo_lng,
@@ -144,6 +146,7 @@ class PostService:
         post_id: int,
         title: str | None = None,
         region_id: int | None = None,
+        city: str | None = None,
         description: str | None = None,
         geo_lat: float | None = None,
         geo_lng: float | None = None,
@@ -156,6 +159,8 @@ class PostService:
             post.title = title.strip()
         if region_id is not None:
             post.region_id = region_id
+        if city is not None:
+            post.city = city.strip() if city else None
         if description is not None:
             post.description = description
         if geo_lat is not None:

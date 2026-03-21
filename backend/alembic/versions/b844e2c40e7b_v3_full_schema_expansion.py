@@ -1,7 +1,7 @@
 """v3 full schema expansion
 
 Revision ID: b844e2c40e7b
-Revises: 008
+Revises:
 Create Date: 2026-03-21
 """
 from typing import Sequence, Union
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 revision: str = "b844e2c40e7b"
-down_revision: Union[str, None] = '008'
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -44,7 +44,7 @@ def upgrade() -> None:
     op.create_table('prompt_compositions',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(), nullable=False),
-    sa.Column('scenario', postgresql.JSONB(astext_type=Text()), nullable=True),
+    sa.Column('scenario', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
@@ -52,7 +52,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('slug', sa.String(), nullable=False),
     sa.Column('category', sa.String(), nullable=False),
-    sa.Column('scenario', postgresql.JSONB(astext_type=Text()), nullable=True),
+    sa.Column('scenario', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('transport_context', sa.String(), nullable=True),
     sa.Column('weather_context', sa.String(), nullable=True),
     sa.Column('group_context', sa.String(), nullable=True),
@@ -90,7 +90,7 @@ def upgrade() -> None:
     sa.Column('avatar_url', sa.String(), nullable=True),
     sa.Column('bio', sa.Text(), nullable=True),
     sa.Column('role', sa.Enum('tourist', 'owner', 'both', name='user_role_enum'), server_default='tourist', nullable=False),
-    sa.Column('taste_profile', postgresql.JSONB(astext_type=Text()), nullable=True),
+    sa.Column('taste_profile', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -116,7 +116,7 @@ def upgrade() -> None:
     sa.Column('specialization', sa.String(), nullable=True),
     sa.Column('price_from', sa.Integer(), nullable=True),
     sa.Column('bio', sa.Text(), nullable=True),
-    sa.Column('contacts', postgresql.JSONB(astext_type=Text()), nullable=True),
+    sa.Column('contacts', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('region_id', sa.BigInteger(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['region_id'], ['geo_regions.id'], ondelete='SET NULL'),
@@ -135,7 +135,7 @@ def upgrade() -> None:
     sa.Column('group_size', sa.Integer(), nullable=True),
     sa.Column('transport', sa.String(), nullable=True),
     sa.Column('budget', sa.String(), nullable=True),
-    sa.Column('interests', postgresql.JSONB(astext_type=Text()), nullable=True),
+    sa.Column('interests', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('pace', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
@@ -160,6 +160,7 @@ def upgrade() -> None:
     sa.Column('author_id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('city', sa.String(), nullable=True),
     sa.Column('geo_lat', sa.Float(), nullable=True),
     sa.Column('geo_lng', sa.Float(), nullable=True),
     sa.Column('season', sa.Enum('spring', 'summer', 'autumn', 'winter', name='season_enum'), nullable=False),
@@ -223,7 +224,7 @@ def upgrade() -> None:
     sa.Column('total_hotels', sa.Integer(), server_default='0', nullable=False),
     sa.Column('total_transports', sa.Integer(), server_default='0', nullable=False),
     sa.Column('share_token', sa.String(), nullable=True),
-    sa.Column('params', postgresql.JSONB(astext_type=Text()), nullable=True),
+    sa.Column('params', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('status', sa.Enum('draft', 'ready', 'stale', 'booking', 'partially_booked', 'booked', 'completed', 'cancelled', name='route_status_enum'), server_default='draft', nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -267,6 +268,34 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['following_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('follower_id', 'following_id')
     )
+    op.create_table('user_saved_routes',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('title', sa.String(), nullable=True),
+    sa.Column('start_lat', sa.Float(), nullable=False),
+    sa.Column('start_lng', sa.Float(), nullable=False),
+    sa.Column('start_label', sa.String(), nullable=True),
+    sa.Column('ai_generated', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('ai_route_meta', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_user_saved_routes_user_id'), 'user_saved_routes', ['user_id'], unique=False)
+    op.create_table('user_saved_route_items',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('route_id', sa.Integer(), nullable=False),
+    sa.Column('post_id', sa.Integer(), nullable=False),
+    sa.Column('position', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['post_id'], ['posts.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['route_id'], ['user_saved_routes.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('route_id', 'position', name='uq_user_saved_route_position'),
+    sa.UniqueConstraint('route_id', 'post_id', name='uq_user_saved_route_post'),
+    )
+    op.create_index(op.f('ix_user_saved_route_items_route_id'), 'user_saved_route_items', ['route_id'], unique=False)
+    op.create_index(op.f('ix_user_saved_route_items_post_id'), 'user_saved_route_items', ['post_id'], unique=False)
     op.create_table('user_tags',
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('tag_id', sa.Integer(), nullable=False),
@@ -386,7 +415,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('route_id', sa.Integer(), nullable=False),
     sa.Column('composition_id', sa.Integer(), nullable=True),
-    sa.Column('template_ids', postgresql.JSONB(astext_type=Text()), nullable=True),
+    sa.Column('template_ids', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('assembled_prompt', sa.Text(), nullable=True),
     sa.Column('llm_response', sa.Text(), nullable=True),
     sa.Column('model', sa.String(), nullable=True),
@@ -406,7 +435,7 @@ def upgrade() -> None:
     sa.Column('post_id', sa.Integer(), nullable=False),
     sa.Column('rating', sa.Integer(), nullable=False),
     sa.Column('comment', sa.Text(), nullable=True),
-    sa.Column('media_urls', postgresql.JSONB(astext_type=Text()), nullable=False),
+    sa.Column('media_urls', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint('rating >= 1 AND rating <= 5', name='ck_reviews_rating_1_5'),
     sa.ForeignKeyConstraint(['author_id'], ['users.id'], ondelete='CASCADE'),
@@ -426,7 +455,7 @@ def upgrade() -> None:
     sa.Column('narrative', sa.Text(), nullable=True),
     sa.Column('date_from', sa.Date(), nullable=True),
     sa.Column('date_to', sa.Date(), nullable=True),
-    sa.Column('photos', postgresql.JSONB(astext_type=Text()), nullable=True),
+    sa.Column('photos', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['city_id'], ['geo_regions.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['route_id'], ['routes.id'], ondelete='CASCADE'),
@@ -502,7 +531,7 @@ def upgrade() -> None:
     sa.Column('provider_name', sa.String(), nullable=True),
     sa.Column('provider_url', sa.String(), nullable=True),
     sa.Column('ai_comment', sa.Text(), nullable=True),
-    sa.Column('details', postgresql.JSONB(astext_type=Text()), nullable=True),
+    sa.Column('details', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['parent_id'], ['segment_items.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['segment_id'], ['route_segments.id'], ondelete='CASCADE'),
@@ -632,6 +661,11 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_posts_region_id'), table_name='posts')
     op.drop_index(op.f('ix_posts_partner_id'), table_name='posts')
     op.drop_index(op.f('ix_posts_author_id'), table_name='posts')
+    op.drop_index(op.f('ix_user_saved_route_items_post_id'), table_name='user_saved_route_items')
+    op.drop_index(op.f('ix_user_saved_route_items_route_id'), table_name='user_saved_route_items')
+    op.drop_table('user_saved_route_items')
+    op.drop_index(op.f('ix_user_saved_routes_user_id'), table_name='user_saved_routes')
+    op.drop_table('user_saved_routes')
     op.drop_table('posts')
     op.drop_index(op.f('ix_invites_inviter_id'), table_name='invites')
     op.drop_index(op.f('ix_invites_invitee_id'), table_name='invites')

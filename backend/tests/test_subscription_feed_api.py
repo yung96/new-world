@@ -11,17 +11,26 @@ async def _auth_headers(client, phone: str) -> tuple[dict[str, str], int]:
     return headers, me_resp.json()["id"]
 
 
-async def _create_post(client, headers: dict[str, str], *, title: str = "Место") -> int:
+async def _create_post(
+    client,
+    headers: dict[str, str],
+    *,
+    title: str = "Место",
+    city: str | None = "Самара",
+) -> int:
+    body: dict = {
+        "title": title,
+        "description": None,
+        "geoLat": None,
+        "geoLng": None,
+        "interestIds": [],
+        "season": Season.winter.value,
+    }
+    if city is not None:
+        body["city"] = city
     resp = await client.post(
         "/api/posts",
-        json={
-            "title": title,
-            "description": None,
-            "geoLat": None,
-            "geoLng": None,
-            "interestIds": [],
-            "season": Season.winter.value,
-        },
+        json=body,
         headers=headers,
     )
     assert resp.status_code == 201
@@ -34,7 +43,9 @@ async def test_subscription_feed_shows_reviews_from_followed_only(client):
     subscriber_h, _ = await _auth_headers(client, "+70000000072")
     stranger_h, _ = await _auth_headers(client, "+70000000073")
 
-    post_id = await _create_post(client, post_author_h, title="Музей А")
+    post_id = await _create_post(
+        client, post_author_h, title="Музей А", city="Казань"
+    )
 
     sub = await client.post(
         "/api/subscriptions",

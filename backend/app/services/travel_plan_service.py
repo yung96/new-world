@@ -134,12 +134,16 @@ class TravelPlanService:
             & Post.geo_lat.between(lat_min, lat_max)
             & Post.geo_lng.between(lon_min, lon_max)
         )
-        city_clause = Post.city.ilike(city_term)
+        text_clause = or_(
+            Post.city.ilike(city_term),
+            Post.title.ilike(city_term),
+            Post.description.ilike(city_term),
+        )
 
         stmt = (
             select(Post, rating_subquery.c.avg_rating)
             .outerjoin(rating_subquery, rating_subquery.c.post_id == Post.id)
-            .where(or_(geo_clause, city_clause))
+            .where(or_(geo_clause, text_clause))
             .options(selectinload(Post.interests))
             .order_by(Post.created_at.desc())
             .limit(limit)

@@ -105,7 +105,9 @@ class UserRouteService:
         stmt = (
             select(UserSavedRoute)
             .where(UserSavedRoute.user_id == user.id)
-            .options(selectinload(UserSavedRoute.items))
+            .options(
+                selectinload(UserSavedRoute.items).selectinload(UserSavedRouteItem.post)
+            )
             .order_by(UserSavedRoute.updated_at.desc(), UserSavedRoute.id.desc())
             .offset(offset)
             .limit(page_size)
@@ -113,10 +115,10 @@ class UserRouteService:
         routes = list((await self.db.execute(stmt)).scalars().all())
         return routes, total
 
-    async def get_route_owned(self, *, user: User, route_id: int) -> UserSavedRoute:
+    async def get_route_owned(self, *, user_id: int, route_id: int) -> UserSavedRoute:
         stmt = (
             select(UserSavedRoute)
-            .where(UserSavedRoute.id == route_id, UserSavedRoute.user_id == user.id)
+            .where(UserSavedRoute.id == route_id, UserSavedRoute.user_id == user_id)
             .options(selectinload(UserSavedRoute.items).selectinload(UserSavedRouteItem.post))
             .limit(1)
         )
@@ -125,10 +127,10 @@ class UserRouteService:
             raise HTTPException(status_code=404, detail="Маршрут не найден")
         return route
 
-    async def delete_route(self, *, user: User, route_id: int) -> None:
+    async def delete_route(self, *, user_id: int, route_id: int) -> None:
         stmt = delete(UserSavedRoute).where(
             UserSavedRoute.id == route_id,
-            UserSavedRoute.user_id == user.id,
+            UserSavedRoute.user_id == user_id,
         )
         res = await self.db.execute(stmt)
         await self.db.commit()
@@ -146,7 +148,7 @@ class UserRouteService:
         start_label: str | None | Any = UNSET,
         post_ids: list[int] | Any = UNSET,
     ) -> UserSavedRoute:
-        route = await self.get_route_owned(user=user, route_id=route_id)
+        route = await self.get_route_owned(user_id=user.id, route_id=route_id)
 
         if title is not UNSET:
             route.title = title.strip() if title else None

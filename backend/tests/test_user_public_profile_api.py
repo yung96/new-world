@@ -11,17 +11,26 @@ async def _auth_headers(client, phone: str) -> tuple[dict[str, str], int]:
     return headers, me_resp.json()["id"]
 
 
-async def _create_post(client, headers: dict[str, str], *, title: str = "Место") -> int:
+async def _create_post(
+    client,
+    headers: dict[str, str],
+    *,
+    title: str = "Место",
+    city: str | None = "Самара",
+) -> int:
+    body: dict = {
+        "title": title,
+        "description": None,
+        "geoLat": None,
+        "geoLng": None,
+        "interestIds": [],
+        "season": Season.summer.value,
+    }
+    if city is not None:
+        body["city"] = city
     resp = await client.post(
         "/api/posts",
-        json={
-            "title": title,
-            "description": None,
-            "geoLat": None,
-            "geoLng": None,
-            "interestIds": [],
-            "season": Season.summer.value,
-        },
+        json=body,
         headers=headers,
     )
     assert resp.status_code == 201
@@ -78,9 +87,9 @@ async def test_public_profile_unknown_user_404(client):
 
 async def test_public_profile_reviews_pagination(client):
     headers, uid = await _auth_headers(client, "+70000000083")
-    post_id = await _create_post(client, headers, title="Один пост")
 
     for i in range(3):
+        post_id = await _create_post(client, headers, title=f"Пост {i}")
         r = await client.post(
             f"/api/posts/{post_id}/reviews",
             json={"rating": 4, "comment": f"R{i}", "mediaUrls": []},

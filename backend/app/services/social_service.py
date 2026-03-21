@@ -348,8 +348,8 @@ class SocialService:
         if subscriber.id == following_id:
             raise HTTPException(status_code=400, detail="Cannot subscribe to yourself")
         await self.get_user_or_404(following_id)
-        exists_stmt = select(user_subscriptions.c.subscriber_id).where(
-            user_subscriptions.c.subscriber_id == subscriber.id,
+        exists_stmt = select(user_subscriptions.c.follower_id).where(
+            user_subscriptions.c.follower_id == subscriber.id,
             user_subscriptions.c.following_id == following_id,
         )
         exists = (await self.db.execute(exists_stmt)).first() is not None
@@ -357,7 +357,7 @@ class SocialService:
             raise HTTPException(status_code=409, detail="Already subscribed")
         await self.db.execute(
             user_subscriptions.insert().values(
-                subscriber_id=subscriber.id,
+                follower_id=subscriber.id,
                 following_id=following_id,
             )
         )
@@ -366,7 +366,7 @@ class SocialService:
     async def unsubscribe(self, *, subscriber: User, following_id: int) -> None:
         await self.db.execute(
             user_subscriptions.delete().where(
-                user_subscriptions.c.subscriber_id == subscriber.id,
+                user_subscriptions.c.follower_id == subscriber.id,
                 user_subscriptions.c.following_id == following_id,
             )
         )
@@ -379,13 +379,13 @@ class SocialService:
         total_stmt = (
             select(func.count())
             .select_from(user_subscriptions)
-            .where(user_subscriptions.c.subscriber_id == user.id)
+            .where(user_subscriptions.c.follower_id == user.id)
         )
         total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
         stmt = (
             select(User)
             .join(user_subscriptions, user_subscriptions.c.following_id == User.id)
-            .where(user_subscriptions.c.subscriber_id == user.id)
+            .where(user_subscriptions.c.follower_id == user.id)
             .order_by(User.id.asc())
             .offset(offset)
             .limit(page_size)

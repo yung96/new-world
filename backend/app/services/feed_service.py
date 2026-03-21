@@ -47,7 +47,7 @@ class FeedService:
         offset = (page - 1) * page_size
         join_cond = and_(
             user_subscriptions.c.following_id == Review.author_id,
-            user_subscriptions.c.subscriber_id == user.id,
+            user_subscriptions.c.follower_id == user.id,
         )
         total_stmt = select(func.count(Review.id)).select_from(Review).join(
             user_subscriptions, join_cond

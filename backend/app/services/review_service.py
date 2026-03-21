@@ -27,23 +27,33 @@ class ReviewService:
         if post is None:
             raise HTTPException(status_code=404, detail="Post not found")
 
-        prior_count_stmt = select(func.count(Review.id)).where(
-            Review.author_id == author.id,
-            Review.post_id == post_id,
+        existing_stmt = (
+            select(Review)
+            .where(
+                Review.author_id == author.id,
+                Review.post_id == post_id,
+            )
+            .limit(1)
         )
-        prior_reviews = int(
-            (await self.db.execute(prior_count_stmt)).scalar_one() or 0
-        )
-        first_review_on_post = prior_reviews == 0
+        existing = (await self.db.execute(existing_stmt)).scalar_one_or_none()
 
-        review = Review(
-            author_id=author.id,
-            post_id=post_id,
-            rating=rating,
-            comment=comment,
-            media_urls=media_urls,
-        )
-        self.db.add(review)
+        if existing is None:
+            first_review_on_post = True
+            review = Review(
+                author_id=author.id,
+                post_id=post_id,
+                rating=rating,
+                comment=comment,
+                media_urls=media_urls,
+            )
+            self.db.add(review)
+        else:
+            first_review_on_post = False
+            existing.rating = rating
+            existing.comment = comment
+            existing.media_urls = media_urls
+            review = existing
+
         if first_review_on_post:
             await SocialService(self.db).apply_post_engagement_weights(
                 user=author, post_id=post_id, source="review"
