@@ -193,7 +193,7 @@ class TravelService:
             response.raise_for_status()
             return response.json()
 
-    async def get_available_cities(self) -> list[str]:
+    def get_available_cities(self) -> list[str]:
         """
         Возвращает доступный список городов.
         Пока просто статический список.
