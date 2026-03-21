@@ -80,7 +80,7 @@ async def test_travel_plan_skip_llm_with_mocks(client):
         ],
     ):
         plan_resp = await client.post(
-            api("/travel/plan"),
+            api("/plan"),
             json={
                 "originCity": "Москва",
                 "destinationCity": "Краснодар",
@@ -118,7 +118,7 @@ async def test_travel_plan_unknown_city_400(client):
         return_value=[],
     ):
         plan_resp = await client.post(
-            api("/travel/plan"),
+            api("/plan"),
             json={
                 "originCity": "Москва",
                 "destinationCity": "Несуществопольск",
