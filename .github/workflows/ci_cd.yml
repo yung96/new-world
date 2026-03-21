@@ -1,0 +1,27 @@
+# This is a basic workflow that is manually triggered
+
+name: Deploy To Server
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Клонируем репозиторий в runner
+      - name: Checkout code
+        uses: actions/checkout@v3
+      # 2. Настраиваем SSH-agent с приватным ключом из GitHub Secrets
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+      # 3. Запуск скрипта деплоя на сервере
+      - name: Deploy to server
+        env:
+          SERVER_IP: ${{ secrets.SERVER_HOST }}
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'bash -s' < deploy.sh
