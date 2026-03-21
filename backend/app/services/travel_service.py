@@ -1,13 +1,14 @@
 import asyncio
-import json
 import math
 import urllib
 from urllib.parse import quote
 
 import httpx
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.db import async_session_factory
 
 cities = [
     "Москва",
@@ -288,11 +289,18 @@ class TravelService:
                 "time": current.get("time"),
             }
 
-    async def get_route_full_info(self, body: dict) -> dict:
+    async def get_route_full_info(self, body: dict, user_id: int) -> dict:
         """
         Построение маршрута со всеми его свойствами и интересными точками.
         API: 2GIS + DaData + Wikipedia
         """
+
+        async with async_session_factory() as db:
+            # NOTE: берем 10 самых значимых интереса для пользователя
+            interests = await db.get_interests_by_user(user_id=user_id)
+            user_prefs = [i.name for i in interests]
+            user_prefs = user_prefs[:10]
+
         coords_tuples: list[tuple[float, float]] = [
             (float(point["lon"]), float(point["lat"])) for point in body["points"]
         ]
@@ -303,7 +311,7 @@ class TravelService:
 
         for idx, wp in enumerate(waypoints):
             poi = {}
-            for pref in body["user_prefs"]:
+            for pref in user_prefs:
                 poi[pref] = await self.dgis_search(
                     query=pref,
                     lat=float(wp["lat"]),

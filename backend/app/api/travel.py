@@ -140,15 +140,6 @@ class RouteInfoWithPOIRequestDTO(BasePydanticModel):
     )
     interval: int = Field(..., description="Интервал (км)", examples=[200])
     radius: int = Field(..., description="Радиус (м)", examples=[500])
-    user_prefs: list[str] = Field(
-        ...,
-        description="Предпочтения пользователя",
-        examples=[
-            ["кафе"],
-            ["гостиница"],
-            ["заправка"],
-        ],
-    )
     limit: int = Field(
         ..., description="Лимит промежуточных точек на одно предпочтение"
     )
@@ -307,8 +298,12 @@ async def get_route_matrix_info(
 async def get_route_full_info(
     data: RouteInfoWithPOIRequestDTO,
     service: TravelService = Depends(get_travel_service),
+    current_user: User = Depends(get_current_user),
 ):
-    payload = await service.get_route_full_info(data.model_dump(exclude_none=True))
+    payload = await service.get_route_full_info(
+        data.model_dump(exclude_none=True),
+        user_id=current_user.id,
+    )
     return RouteFullInfoResponseDTO(**payload)
 
 
