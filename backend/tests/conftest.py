@@ -27,7 +27,7 @@ os.environ.setdefault(
 os.environ.setdefault("REDIS_URL", "redis://kraeved_test_redis:6379")
 os.environ.setdefault("SECRET_KEY", "test-secret")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "5")
-
+os.environ.setdefault("IVAN_ALT_TEST_SECRET", "test-ivan-e2e-panel")
 
 from app.core.config import settings
 from app.models import Base

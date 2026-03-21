@@ -85,6 +85,14 @@ class Settings(BaseSettings):
     )
     GPT_MODEL: str = Field(default="gpt-4o-mini", description="Модель GPT по умолчанию")
 
+    IVAN_ALT_TEST_SECRET: str | None = Field(
+        default=None,
+        description=(
+            "Секрет для POST /ivan-alt/local-routes/test-run и панели «одна кнопка». "
+            "Если не задан — endpoint отключён (404)."
+        ),
+    )
+
     TRAVEL_API_KEY: str = Field(description="API TRAVEL для глобального подбора рейсов")
     TGIS_API_KEY: str = Field(description="API 2GIS")
     DADATA_API_KEY: str = Field(description="API DaData")

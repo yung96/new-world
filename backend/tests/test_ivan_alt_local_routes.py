@@ -116,3 +116,40 @@ async def test_ivan_alt_generate_unknown_interest_400(client):
         headers=h,
     )
     assert r.status_code == 400
+
+
+async def test_ivan_alt_test_panel_returns_html(client):
+    r = await client.get(api("/ivan-alt/local-routes/test-panel"))
+    assert r.status_code == 200
+    assert "text/html" in r.headers.get("content-type", "")
+    assert "test-run" in r.text
+
+
+async def test_ivan_alt_test_run_requires_secret(client):
+    r = await client.post(api("/ivan-alt/local-routes/test-run?skipLlm=true"))
+    assert r.status_code == 404
+
+
+async def test_ivan_alt_test_run_wrong_secret(client):
+    r = await client.post(
+        api("/ivan-alt/local-routes/test-run?skipLlm=true"),
+        headers={"X-Ivan-Alt-Test-Secret": "wrong"},
+    )
+    assert r.status_code == 404
+
+
+async def test_ivan_alt_test_run_skip_llm(client):
+    r = await client.post(
+        api("/ivan-alt/local-routes/test-run?skipLlm=true"),
+        headers={"X-Ivan-Alt-Test-Secret": "test-ivan-e2e-panel"},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert "setup" in body
+    assert "llmInput" in body
+    assert "generateResult" in body
+    assert body["llmInput"].get("systemPrompt")
+    assert "context" in body["llmInput"]
+    assert body["generateResult"]["usedLlm"] is False
+    assert len(body["setup"]["postIds"]) == 2
+    assert set(body["generateResult"]["candidateIds"]) == set(body["setup"]["postIds"])

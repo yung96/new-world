@@ -39,6 +39,7 @@ class IvanAltLocalRouteBuildResult:
     stops: list[dict[str, Any]]
     warnings: list[str]
     used_llm: bool
+    trace: dict[str, Any] | None = None
 
 
 class IvanAltLocalRouteService:
@@ -147,6 +148,7 @@ class IvanAltLocalRouteService:
         interest_weights: list[tuple[int, int]],
         bbox_delta_degrees: float,
         skip_llm: bool = False,
+        include_trace: bool = False,
     ) -> IvanAltLocalRouteBuildResult:
         warnings: list[str] = []
         if not interest_weights:
@@ -213,6 +215,13 @@ class IvanAltLocalRouteService:
             "candidatePlaces": candidates_payload,
         }
         ctx_json = json.dumps(ctx, ensure_ascii=False)
+        trace: dict[str, Any] | None = None
+        if include_trace:
+            trace = {
+                "systemPrompt": LOCAL_ROUTE_SYSTEM_PROMPT,
+                "userPrompt": "Собери маршрут по JSON-контексту:\n" + ctx_json,
+                "context": json.loads(ctx_json),
+            }
 
         used_llm = False
         if skip_llm:
@@ -261,6 +270,7 @@ class IvanAltLocalRouteService:
             stops=stops_out,
             warnings=warnings,
             used_llm=used_llm,
+            trace=trace,
         )
 
     async def build_and_maybe_save(
@@ -275,6 +285,7 @@ class IvanAltLocalRouteService:
         bbox_delta_degrees: float,
         save: bool,
         skip_llm: bool,
+        include_trace: bool = False,
     ) -> tuple[IvanAltLocalRouteBuildResult, int | None]:
         result = await self.build(
             user=user,
@@ -285,6 +296,7 @@ class IvanAltLocalRouteService:
             interest_weights=interest_weights,
             bbox_delta_degrees=bbox_delta_degrees,
             skip_llm=skip_llm,
+            include_trace=include_trace,
         )
         route_id: int | None = None
         if save:
