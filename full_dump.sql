@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict qbhmFdbuMWGgvcsszbpUdMs0Xjnruga4L2wD41QbsuOsstiCcBLCKr7kXkxY1MT
+\restrict AoP2SQVioTSecVMtpcQhezzaqecTRkJOYOfynqSPGDiFs3LIW0Ha8BBdiCQ61nS
 
 -- Dumped from database version 15.17 (Debian 15.17-1.pgdg13+1)
 -- Dumped by pg_dump version 18.2
@@ -2131,6 +2131,18 @@ COPY public.geo_regions (id, name, slug, type, parent_id, polygon, centroid, pop
 --
 
 COPY public.interests (id, name, emoji) FROM stdin;
+1	Гастро	🍽
+2	Вино	🍷
+3	Эко	🌿
+4	Природа	🏔
+5	Культура	🏛
+6	Отдых	🏖
+7	Активность	🚴
+8	Workation	💻
+9	Семья	👨‍👩‍👧‍👦
+10	Романтика	❤️
+11	Фото	📸
+12	История	📜
 \.
 
 
@@ -3855,7 +3867,7 @@ SELECT pg_catalog.setval('public.geo_regions_id_seq', 145, true);
 -- Name: interests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: kraeved_user
 --
 
-SELECT pg_catalog.setval('public.interests_id_seq', 1, false);
+SELECT pg_catalog.setval('public.interests_id_seq', 12, true);
 
 
 --
@@ -5285,5 +5297,5 @@ ALTER TABLE ONLY public.weather_monthly
 -- PostgreSQL database dump complete
 --
 
-\unrestrict qbhmFdbuMWGgvcsszbpUdMs0Xjnruga4L2wD41QbsuOsstiCcBLCKr7kXkxY1MT
+\unrestrict AoP2SQVioTSecVMtpcQhezzaqecTRkJOYOfynqSPGDiFs3LIW0Ha8BBdiCQ61nS
 
