@@ -16,22 +16,18 @@ async def test_feed_total_matches_all_posts(db_session):
     await posts.create_post(
         author=a,
         title="P1",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.spring,
         interest_ids=[intr.id],
     )
     await posts.create_post(
         author=a,
         title="P2",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.spring,
         interest_ids=[intr.id],
     )
@@ -57,22 +53,18 @@ async def test_feed_prioritizes_high_weight_interest_match(db_session):
     post_match_a = await posts.create_post(
         author=author,
         title="ТолькоА",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.summer,
         interest_ids=[ia.id],
     )
     await posts.create_post(
         author=author,
         title="ТолькоБ",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.summer,
         interest_ids=[ib.id],
     )
@@ -90,11 +82,9 @@ async def test_feed_works_without_user_interests(db_session):
     await posts.create_post(
         author=author,
         title="Один",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.winter,
         interest_ids=[intr.id],
     )
@@ -117,22 +107,18 @@ async def test_feed_includes_popular_signal(db_session):
     p_niche = await posts.create_post(
         author=author,
         title="Ниша",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.autumn,
         interest_ids=[i1.id, i2.id],
     )
     p_hot = await posts.create_post(
         author=author,
         title="Много отзывов",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.autumn,
         interest_ids=[i2.id],
     )

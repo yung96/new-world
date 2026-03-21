@@ -166,3 +166,4 @@ cython_debug/
 .redis_data/
 
 .pycache_tmp/
+frontend

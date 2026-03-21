@@ -14,9 +14,7 @@ async def _create_post(
     resp = await client.post(
         "/api/user/posts",
         json={
-            "mediaUrls": [],
             "title": title,
-            "city": "Сочи",
             "description": "Описание",
             "geoLat": 55.75,
             "geoLng": 37.61,
@@ -41,9 +39,7 @@ async def test_post_create_and_delete_cycle(client):
     create_resp = await client.post(
         "/api/posts",
         json={
-            "mediaUrls": ["/api/uploads/x1.jpg"],
             "title": "Тестовый пост",
-            "city": "Сочи",
             "description": "Описание",
             "geoLat": 55.7961,
             "geoLng": 49.1064,
@@ -88,9 +84,7 @@ async def test_post_create_requires_auth(client):
     resp = await client.post(
         "/api/posts",
         json={
-            "mediaUrls": [],
             "title": "Без токена",
-            "city": "Сочи",
             "description": None,
             "geoLat": 55.75,
             "geoLng": 37.61,
@@ -106,9 +100,7 @@ async def test_post_create_invalid_coordinates_returns_422(client):
     resp = await client.post(
         "/api/posts",
         json={
-            "mediaUrls": [],
             "title": "Неверные координаты",
-            "city": "Сочи",
             "description": None,
             "geoLat": 100.0,
             "geoLng": 200.0,
@@ -125,9 +117,7 @@ async def test_post_create_with_missing_interest_returns_404(client):
     resp = await client.post(
         "/api/posts",
         json={
-            "mediaUrls": [],
             "title": "С несуществующим интересом",
-            "city": "Сочи",
             "description": None,
             "geoLat": 55.75,
             "geoLng": 37.61,

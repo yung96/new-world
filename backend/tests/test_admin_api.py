@@ -29,14 +29,12 @@ async def test_admin_can_edit_post_and_interest_set(client):
     post_resp = await client.post(
         "/api/user/posts",
         json={
-            "mediaUrls": [],
             "title": "Старое место",
-            "city": "Москва",
             "description": "старое описание",
             "geoLat": 55.75,
             "geoLng": 37.61,
             "interestIds": [interest_id],
-            "season": Season.spring,
+            "season": Season.spring.value,
         },
         headers=user_headers,
     )
@@ -56,7 +54,7 @@ async def test_admin_can_edit_post_and_interest_set(client):
             "title": "Новое место",
             "description": "описание admin",
             "interestIds": [new_interest_id],
-            "season": Season.spring,
+            "season": Season.spring.value,
         },
     )
     assert patch_resp.status_code == 200
