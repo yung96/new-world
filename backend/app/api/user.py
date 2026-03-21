@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -5,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.auth import get_current_user
 from app.api.base_schema import BasePydanticModel
 from app.api.posts import PostCreateRequest, PostListResponse, PostResponse
+from app.api.reviews import ReviewAuthorResponse
 from app.core.dependencies import get_db_session
+from app.models.review import Review
 from app.models.user import User
 from app.services.feed_service import FeedService
 from app.services.post_service import PostService
@@ -70,6 +74,45 @@ class SwipeNextResponse(BasePydanticModel):
     )
     message: str | None = Field(default=None, description="Сообщение для клиента.")
     post: PostResponse | None = Field(default=None, description="Следующая карточка.")
+
+
+class SubscriptionActivityItemResponse(BasePydanticModel):
+    """Элемент ленты подписок: отзыв + краткие данные о месте (посте)."""
+
+    id: int = Field(description="Идентификатор отзыва.")
+    authorId: int = Field(description="Автор отзыва (пользователь, на которого можно подписаться).")
+    postId: int = Field(description="Идентификатор места (поста).")
+    rating: int = Field(description="Оценка 1–5.")
+    comment: str | None = Field(description="Текст отзыва.")
+    mediaUrls: list[str] = Field(description="URL медиа к отзыву.")
+    createdAt: datetime = Field(description="Время публикации отзыва (сортировка ленты по убыванию).")
+    author: ReviewAuthorResponse
+    postTitle: str = Field(description="Название места.")
+    postCity: str = Field(description="Город места.")
+
+
+class SubscriptionActivityListResponse(BasePydanticModel):
+    items: list[SubscriptionActivityItemResponse] = Field(
+        description="Отзывы от пользователей, на которых подписан текущий клиент."
+    )
+    total: int = Field(description="Общее число отзывов в ленте (с учётом фильтра подписок).")
+    page: int
+    pageSize: int
+
+
+def _to_subscription_activity_item(review: Review) -> SubscriptionActivityItemResponse:
+    return SubscriptionActivityItemResponse(
+        id=review.id,
+        authorId=review.author_id,
+        postId=review.post_id,
+        rating=review.rating,
+        comment=review.comment,
+        mediaUrls=list(review.media_urls or []),
+        createdAt=review.created_at,
+        author=ReviewAuthorResponse(id=review.author.id, phone=review.author.phone),
+        postTitle=review.post.title,
+        postCity=_city_or_empty(review.post.city),
+    )
 
 
 @router.post(
@@ -168,6 +211,44 @@ async def user_feed(
     )
     items = [_to_post_response(post, avg_rating) for post, avg_rating in rows]
     return PostListResponse(items=items, total=total, page=page, pageSize=pageSize)
+
+
+@router.get(
+    "/subscriptions/feed",
+    response_model=SubscriptionActivityListResponse,
+    summary="Лента активности подписок",
+    operation_id="get_user_subscriptions_feed",
+    description=(
+        "**Полный путь:** `GET /api/user/subscriptions/feed`. "
+        "Требуется заголовок `Authorization: Bearer <token>` (как для остальных user-эндпоинтов). "
+        "Возвращает хронологический список отзывов о местах от пользователей, на которых подписан "
+        "текущий пользователь (сортировка по `createdAt` у отзыва, новые выше). "
+        "Не смешивается с рекомендательной лентой карточек (`GET /user/feed`)."
+    ),
+    response_description="Страница отзывов с полями автора и места (postTitle, postCity).",
+)
+async def subscription_activity_feed(
+    page: int = Query(
+        default=1,
+        ge=1,
+        description="Номер страницы (с 1).",
+    ),
+    pageSize: int = Query(
+        default=20,
+        ge=1,
+        le=100,
+        description="Размер страницы.",
+    ),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    reviews, total = await _feed_service(db).list_subscription_activity(
+        user=current_user, page=page, page_size=pageSize
+    )
+    items = [_to_subscription_activity_item(r) for r in reviews]
+    return SubscriptionActivityListResponse(
+        items=items, total=total, page=page, pageSize=pageSize
+    )
 
 
 @router.get(

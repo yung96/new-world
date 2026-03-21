@@ -9,7 +9,6 @@ from app.api.base_schema import BasePydanticModel
 from app.api.auth import get_current_user
 from app.core.dependencies import get_db_session
 from app.models.achievement import Achievement
-from app.models.friend_request import FriendRequest, FriendRequestStatus
 from app.models.interest import Interest
 from app.models.user import User
 from app.services.social_service import SocialService
@@ -47,18 +46,6 @@ class AchievementResponse(BasePydanticModel):
     createdAt: datetime
 
 
-class FriendRequestCreateRequest(BasePydanticModel):
-    receiverUserId: int
-
-
-class FriendRequestResponse(BasePydanticModel):
-    id: int
-    requesterId: int
-    receiverId: int
-    status: FriendRequestStatus
-    createdAt: datetime
-
-
 class PaginatedInterestsResponse(BasePydanticModel):
     items: list[InterestResponse]
     total: int
@@ -73,14 +60,11 @@ class PaginatedAchievementsResponse(BasePydanticModel):
     pageSize: int
 
 
-class PaginatedFriendRequestsResponse(BasePydanticModel):
-    items: list[FriendRequestResponse]
-    total: int
-    page: int
-    pageSize: int
+class SubscriptionCreateRequest(BasePydanticModel):
+    targetUserId: int
 
 
-class PaginatedFriendsResponse(BasePydanticModel):
+class PaginatedFollowingResponse(BasePydanticModel):
     items: list[UserCompactResponse]
     total: int
     page: int
@@ -122,16 +106,6 @@ def _achievement_to_response(item: Achievement) -> AchievementResponse:
         id=item.id,
         name=item.name,
         description=item.description,
-        createdAt=item.created_at,
-    )
-
-
-def _friend_request_to_response(item: FriendRequest) -> FriendRequestResponse:
-    return FriendRequestResponse(
-        id=item.id,
-        requesterId=item.requester_id,
-        receiverId=item.receiver_id,
-        status=item.status,
         createdAt=item.created_at,
     )
 
@@ -379,117 +353,47 @@ async def remove_achievement_from_me(
 
 
 @router.post(
-    "/friends/requests",
-    response_model=FriendRequestResponse,
+    "/subscriptions",
     status_code=status.HTTP_201_CREATED,
-    summary="Отправить заявку в друзья",
-    description="Создает новую заявку в друзья от текущего пользователя.",
-    response_description="Созданная заявка в друзья.",
+    summary="Подписаться на пользователя",
+    operation_id="create_subscription",
+    description=(
+        "**Путь:** `POST /api/subscriptions`. Тело: `{\"targetUserId\": <id>}`. "
+        "Создаёт одностороннюю подписку текущего пользователя на другого."
+    ),
+    response_description="Тело ответа пустое при успехе (201).",
 )
-async def send_friend_request(
-    payload: FriendRequestCreateRequest,
+async def create_subscription(
+    payload: SubscriptionCreateRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    item = await _service(db).send_friend_request(
-        requester=current_user, receiver_id=payload.receiverUserId
+    await _service(db).subscribe(
+        subscriber=current_user, following_id=payload.targetUserId
     )
-    return _friend_request_to_response(item)
 
 
 @router.get(
-    "/friends/requests/incoming",
-    response_model=PaginatedFriendRequestsResponse,
-    summary="Входящие заявки в друзья",
-    description="Возвращает входящие заявки в друзья для текущего пользователя.",
-    response_description="Список входящих заявок с пагинацией.",
+    "/subscriptions",
+    response_model=PaginatedFollowingResponse,
+    summary="Список подписок",
+    operation_id="list_subscriptions",
+    description=(
+        "**Путь:** `GET /api/subscriptions`. "
+        "Пользователи, на которых подписан текущий пользователь (на кого я подписан)."
+    ),
+    response_description="Список подписок с пагинацией.",
 )
-async def list_incoming_friend_requests(
+async def list_subscriptions(
     current_user: User = Depends(get_current_user),
     page: int = Query(default=1, ge=1),
     pageSize: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db_session),
 ):
-    items, total = await _service(db).list_incoming_friend_requests(
-        user=current_user,
-        page=page,
-        page_size=pageSize,
-    )
-    return PaginatedFriendRequestsResponse(
-        items=[_friend_request_to_response(item) for item in items],
-        total=total,
-        page=page,
-        pageSize=pageSize,
-    )
-
-
-@router.post(
-    "/friends/requests/{request_id}/accept",
-    response_model=FriendRequestResponse,
-    summary="Принять заявку в друзья",
-    description="Переводит входящую заявку в статус accepted.",
-    response_description="Обновленная заявка в друзья.",
-)
-async def accept_friend_request(
-    request_id: int,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session),
-):
-    item = await _service(db).accept_friend_request(
-        user=current_user, request_id=request_id
-    )
-    return _friend_request_to_response(item)
-
-
-@router.post(
-    "/friends/requests/{request_id}/reject",
-    response_model=FriendRequestResponse,
-    summary="Отклонить заявку в друзья",
-    description="Переводит входящую заявку в статус rejected.",
-    response_description="Обновленная заявка в друзья.",
-)
-async def reject_friend_request(
-    request_id: int,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session),
-):
-    item = await _service(db).reject_friend_request(
-        user=current_user, request_id=request_id
-    )
-    return _friend_request_to_response(item)
-
-
-@router.delete(
-    "/friends/requests/{request_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Отменить заявку в друзья",
-    description="Отменяет ранее отправленную заявку в друзья.",
-)
-async def cancel_friend_request(
-    request_id: int,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session),
-):
-    await _service(db).cancel_friend_request(user=current_user, request_id=request_id)
-
-
-@router.get(
-    "/friends",
-    response_model=PaginatedFriendsResponse,
-    summary="Список друзей",
-    description="Возвращает пагинированный список друзей текущего пользователя.",
-    response_description="Список друзей с пагинацией.",
-)
-async def list_friends(
-    current_user: User = Depends(get_current_user),
-    page: int = Query(default=1, ge=1),
-    pageSize: int = Query(default=20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db_session),
-):
-    items, total = await _service(db).list_friends(
+    items, total = await _service(db).list_following(
         current_user, page=page, page_size=pageSize
     )
-    return PaginatedFriendsResponse(
+    return PaginatedFollowingResponse(
         items=[UserCompactResponse(id=item.id, phone=item.phone) for item in items],
         total=total,
         page=page,
@@ -498,14 +402,21 @@ async def list_friends(
 
 
 @router.delete(
-    "/friends/{friend_id}",
+    "/subscriptions/{target_user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Удалить из друзей",
-    description="Удаляет пользователя из списка друзей текущего пользователя.",
+    summary="Отписаться от пользователя",
+    operation_id="delete_subscription",
+    description=(
+        "**Путь:** `DELETE /api/subscriptions/{target_user_id}`. "
+        "Удаляет подписку; повторный вызов без ошибки (идемпотентно)."
+    ),
+    response_description="Пустой ответ при успехе (204).",
 )
-async def delete_friend(
-    friend_id: int,
+async def delete_subscription(
+    target_user_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    await _service(db).delete_friend(user=current_user, friend_id=friend_id)
+    await _service(db).unsubscribe(
+        subscriber=current_user, following_id=target_user_id
+    )

@@ -3,11 +3,11 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.associations import post_interests, user_favorite_posts, user_interests
+from app.models.associations import post_interests, user_favorite_posts, user_interests, user_subscriptions
 from app.models.post import Post
 from app.models.review import Review
 from app.models.user import User
@@ -36,6 +36,33 @@ def _det_shuffle(post_ids: list[int], seed: int) -> list[int]:
 class FeedService:
     def __init__(self, db: AsyncSession):
         self.db = db
+
+    async def list_subscription_activity(
+        self,
+        *,
+        user: User,
+        page: int,
+        page_size: int,
+    ) -> tuple[list[Review], int]:
+        offset = (page - 1) * page_size
+        join_cond = and_(
+            user_subscriptions.c.following_id == Review.author_id,
+            user_subscriptions.c.subscriber_id == user.id,
+        )
+        total_stmt = select(func.count(Review.id)).select_from(Review).join(
+            user_subscriptions, join_cond
+        )
+        total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
+        stmt = (
+            select(Review)
+            .join(user_subscriptions, join_cond)
+            .options(selectinload(Review.author), selectinload(Review.post))
+            .order_by(Review.created_at.desc(), Review.id.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        items = (await self.db.execute(stmt)).scalars().all()
+        return list(items), total
 
     async def list_feed(
         self,

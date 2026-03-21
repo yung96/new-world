@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.security import OAuth2PasswordBearer
 
 from pydantic import Field
@@ -9,8 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.base_schema import BasePydanticModel
 
 from app.core.dependencies import get_db_session
+from app.models.review import Review
 from app.models.user import User
 from app.services.auth_service import AuthService
+from app.services.review_service import ReviewService
+from app.services.social_service import SocialService
 
 # --- Схемы (DTOs) ---
 
@@ -33,6 +36,44 @@ class UserData(BasePydanticModel):
     phone: str = Field(..., description="Телефон пользователя.")
     created_at: datetime = Field(
         ..., description="Дата и время регистрации пользователя."
+    )
+
+
+class UserPublicReviewItem(BasePydanticModel):
+    id: int = Field(description="Идентификатор отзыва.")
+    postId: int = Field(description="Идентификатор карточки места.")
+    postTitle: str = Field(description="Название места.")
+    postCity: str = Field(description="Город места.")
+    rating: int = Field(description="Оценка 1–5.")
+    comment: str | None = Field(description="Текст отзыва.")
+    mediaUrls: list[str] = Field(description="Медиа отзыва.")
+    createdAt: datetime = Field(description="Время публикации отзыва.")
+
+
+class UserPublicProfileResponse(BasePydanticModel):
+    id: int
+    phone: str = Field(description="Телефон пользователя (как в других compact-ответах).")
+    followersCount: int = Field(description="Число подписчиков (кто подписан на этого пользователя).")
+    reviews: list[UserPublicReviewItem]
+    total: int = Field(description="Общее число отзывов автора (для пагинации).")
+    page: int
+    pageSize: int
+
+
+def _city_or_empty(value: str | None) -> str:
+    return (value or "").strip()
+
+
+def _review_to_public_item(review: Review) -> UserPublicReviewItem:
+    return UserPublicReviewItem(
+        id=review.id,
+        postId=review.post_id,
+        postTitle=review.post.title,
+        postCity=_city_or_empty(review.post.city),
+        rating=review.rating,
+        comment=review.comment,
+        mediaUrls=list(review.media_urls or []),
+        createdAt=review.created_at,
     )
 
 
@@ -91,3 +132,37 @@ async def get_user(current_user: User = Depends(get_current_user)):
     Возвращает информацию о текущем авторизованном пользователе.
     """
     return current_user
+
+
+@router.get(
+    "/users/{user_id}",
+    response_model=UserPublicProfileResponse,
+    summary="Публичный профиль пользователя",
+    operation_id="get_public_user_profile",
+    description=(
+        "Профиль другого пользователя: число подписчиков и пагинированный список его отзывов "
+        "с привязкой к карточкам мест (postId, название, город). Авторизация не требуется."
+    ),
+    response_description="Идентификатор, телефон, число подписчиков и отзывы.",
+)
+async def get_public_user_profile(
+    user_id: int,
+    page: int = Query(default=1, ge=1, description="Страница списка отзывов."),
+    pageSize: int = Query(default=20, ge=1, le=100, description="Размер страницы отзывов."),
+    db: AsyncSession = Depends(get_db_session),
+):
+    social = SocialService(db)
+    user = await social.get_user_or_404(user_id)
+    followers_count = await social.count_followers(user_id=user.id)
+    reviews, total = await ReviewService(db).list_reviews_by_author(
+        author_id=user.id, page=page, page_size=pageSize
+    )
+    return UserPublicProfileResponse(
+        id=user.id,
+        phone=user.phone,
+        followersCount=followers_count,
+        reviews=[_review_to_public_item(r) for r in reviews],
+        total=total,
+        page=page,
+        pageSize=pageSize,
+    )

@@ -66,6 +66,23 @@ class ReviewService:
         items = (await self.db.execute(stmt)).scalars().all()
         return items, total
 
+    async def list_reviews_by_author(
+        self, *, author_id: int, page: int, page_size: int
+    ) -> tuple[list[Review], int]:
+        offset = (page - 1) * page_size
+        total_stmt = select(func.count(Review.id)).where(Review.author_id == author_id)
+        total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
+        stmt = (
+            select(Review)
+            .where(Review.author_id == author_id)
+            .options(selectinload(Review.post))
+            .order_by(Review.created_at.desc(), Review.id.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        items = (await self.db.execute(stmt)).scalars().all()
+        return list(items), total
+
     async def get_review_or_404(self, review_id: int) -> Review:
         stmt = select(Review).where(Review.id == review_id).options(selectinload(Review.author)).limit(1)
         review = (await self.db.execute(stmt)).scalar_one_or_none()

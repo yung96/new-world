@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table, UniqueConstraint, text
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Integer, String, Table, UniqueConstraint, text
 
 from app.models import Base
 
@@ -28,12 +28,12 @@ post_interests = Table(
 )
 
 
-user_friends = Table(
-    "user_friends",
+user_subscriptions = Table(
+    "user_subscriptions",
     Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-    Column("friend_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-    UniqueConstraint("user_id", "friend_id", name="uq_user_friend_pair"),
+    Column("subscriber_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("following_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    CheckConstraint("subscriber_id != following_id", name="ck_user_subscriptions_no_self"),
 )
 
 

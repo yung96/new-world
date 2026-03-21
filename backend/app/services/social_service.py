@@ -3,13 +3,12 @@ from __future__ import annotations
 from typing import Literal
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.achievement import Achievement
-from app.models.associations import user_achievements, user_friends, user_interests
-from app.models.friend_request import FriendRequest, FriendRequestStatus
+from app.models.associations import user_achievements, user_interests, user_subscriptions
 from app.models.interest import Interest
 from app.models.post import Post
 from app.models.user import User
@@ -353,20 +352,48 @@ class SocialService:
         user = await self.get_user_or_404(user.id)
         return user
 
-    async def list_friends(
+    async def subscribe(self, *, subscriber: User, following_id: int) -> None:
+        if subscriber.id == following_id:
+            raise HTTPException(status_code=400, detail="Cannot subscribe to yourself")
+        await self.get_user_or_404(following_id)
+        exists_stmt = select(user_subscriptions.c.subscriber_id).where(
+            user_subscriptions.c.subscriber_id == subscriber.id,
+            user_subscriptions.c.following_id == following_id,
+        )
+        exists = (await self.db.execute(exists_stmt)).first() is not None
+        if exists:
+            raise HTTPException(status_code=409, detail="Already subscribed")
+        await self.db.execute(
+            user_subscriptions.insert().values(
+                subscriber_id=subscriber.id,
+                following_id=following_id,
+            )
+        )
+        await self.db.commit()
+
+    async def unsubscribe(self, *, subscriber: User, following_id: int) -> None:
+        await self.db.execute(
+            user_subscriptions.delete().where(
+                user_subscriptions.c.subscriber_id == subscriber.id,
+                user_subscriptions.c.following_id == following_id,
+            )
+        )
+        await self.db.commit()
+
+    async def list_following(
         self, user: User, *, page: int, page_size: int
     ) -> tuple[list[User], int]:
         offset = (page - 1) * page_size
         total_stmt = (
             select(func.count())
-            .select_from(user_friends)
-            .where(user_friends.c.user_id == user.id)
+            .select_from(user_subscriptions)
+            .where(user_subscriptions.c.subscriber_id == user.id)
         )
         total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
         stmt = (
             select(User)
-            .join(user_friends, user_friends.c.friend_id == User.id)
-            .where(user_friends.c.user_id == user.id)
+            .join(user_subscriptions, user_subscriptions.c.following_id == User.id)
+            .where(user_subscriptions.c.subscriber_id == user.id)
             .order_by(User.id.asc())
             .offset(offset)
             .limit(page_size)
@@ -374,153 +401,10 @@ class SocialService:
         items = (await self.db.execute(stmt)).scalars().all()
         return items, total
 
-    async def send_friend_request(
-        self, *, requester: User, receiver_id: int
-    ) -> FriendRequest:
-        if requester.id == receiver_id:
-            raise HTTPException(status_code=400, detail="Cannot add yourself")
-        receiver = await self.get_user_or_404(receiver_id)
-
-        if await self._are_friends(requester.id, receiver.id):
-            raise HTTPException(status_code=409, detail="Users are already friends")
-
-        existing = (
-            await self.db.execute(
-                select(FriendRequest).where(
-                    or_(
-                        and_(
-                            FriendRequest.requester_id == requester.id,
-                            FriendRequest.receiver_id == receiver.id,
-                        ),
-                        and_(
-                            FriendRequest.requester_id == receiver.id,
-                            FriendRequest.receiver_id == requester.id,
-                        ),
-                    ),
-                    FriendRequest.status == FriendRequestStatus.pending,
-                )
-            )
-        ).scalar_one_or_none()
-        if existing is not None:
-            raise HTTPException(
-                status_code=409, detail="Pending request already exists"
-            )
-
-        request = FriendRequest(
-            requester_id=requester.id,
-            receiver_id=receiver.id,
-            status=FriendRequestStatus.pending,
-        )
-        self.db.add(request)
-        await self.db.commit()
-        await self.db.refresh(request)
-        return request
-
-    async def list_incoming_friend_requests(
-        self, *, user: User, page: int, page_size: int
-    ) -> tuple[list[FriendRequest], int]:
-        offset = (page - 1) * page_size
-        total_stmt = select(func.count(FriendRequest.id)).where(
-            FriendRequest.receiver_id == user.id,
-            FriendRequest.status == FriendRequestStatus.pending,
-        )
-        total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
+    async def count_followers(self, *, user_id: int) -> int:
         stmt = (
-            select(FriendRequest)
-            .where(
-                FriendRequest.receiver_id == user.id,
-                FriendRequest.status == FriendRequestStatus.pending,
-            )
-            .order_by(FriendRequest.created_at.desc(), FriendRequest.id.desc())
-            .offset(offset)
-            .limit(page_size)
+            select(func.count())
+            .select_from(user_subscriptions)
+            .where(user_subscriptions.c.following_id == user_id)
         )
-        items = (await self.db.execute(stmt)).scalars().all()
-        return items, total
-
-    async def cancel_friend_request(self, *, user: User, request_id: int) -> None:
-        req = await self._get_friend_request_or_404(request_id)
-        if req.requester_id != user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Cannot cancel this request",
-            )
-        if req.status != FriendRequestStatus.pending:
-            raise HTTPException(
-                status_code=409, detail="Only pending request can be cancelled"
-            )
-        await self.db.delete(req)
-        await self.db.commit()
-
-    async def accept_friend_request(
-        self, *, user: User, request_id: int
-    ) -> FriendRequest:
-        req = await self._get_friend_request_or_404(request_id)
-        if req.receiver_id != user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Cannot accept this request",
-            )
-        if req.status != FriendRequestStatus.pending:
-            raise HTTPException(status_code=409, detail="Request already handled")
-
-        req.status = FriendRequestStatus.accepted
-        await self.db.execute(
-            user_friends.insert().values(
-                user_id=req.requester_id, friend_id=req.receiver_id
-            )
-        )
-        await self.db.execute(
-            user_friends.insert().values(
-                user_id=req.receiver_id, friend_id=req.requester_id
-            )
-        )
-        await self.db.commit()
-        await self.db.refresh(req)
-        return req
-
-    async def reject_friend_request(
-        self, *, user: User, request_id: int
-    ) -> FriendRequest:
-        req = await self._get_friend_request_or_404(request_id)
-        if req.receiver_id != user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Cannot reject this request",
-            )
-        if req.status != FriendRequestStatus.pending:
-            raise HTTPException(status_code=409, detail="Request already handled")
-        req.status = FriendRequestStatus.rejected
-        await self.db.commit()
-        await self.db.refresh(req)
-        return req
-
-    async def delete_friend(self, *, user: User, friend_id: int) -> None:
-        await self.get_user_or_404(friend_id)
-        await self.db.execute(
-            user_friends.delete().where(
-                or_(
-                    and_(
-                        user_friends.c.user_id == user.id,
-                        user_friends.c.friend_id == friend_id,
-                    ),
-                    and_(
-                        user_friends.c.user_id == friend_id,
-                        user_friends.c.friend_id == user.id,
-                    ),
-                )
-            )
-        )
-        await self.db.commit()
-
-    async def _are_friends(self, user_id: int, friend_id: int) -> bool:
-        stmt = select(user_friends.c.user_id).where(
-            user_friends.c.user_id == user_id, user_friends.c.friend_id == friend_id
-        )
-        return (await self.db.execute(stmt)).first() is not None
-
-    async def _get_friend_request_or_404(self, request_id: int) -> FriendRequest:
-        req = await self.db.get(FriendRequest, request_id)
-        if req is None:
-            raise HTTPException(status_code=404, detail="Friend request not found")
-        return req
+        return int((await self.db.execute(stmt)).scalar_one() or 0)
