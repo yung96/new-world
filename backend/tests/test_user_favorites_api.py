@@ -11,6 +11,7 @@ async def _create_post(client, headers: dict[str, str], title: str) -> int:
         json={
             "mediaUrls": [],
             "title": title,
+            "city": "Москва",
             "description": "Описание",
             "geoLat": 55.75,
             "geoLng": 37.61,

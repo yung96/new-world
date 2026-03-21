@@ -85,8 +85,14 @@ class Settings(BaseSettings):
     )
     GPT_MODEL: str = Field(default="gpt-4o-mini", description="Модель GPT по умолчанию")
 
-    TRAVEL_API_KEY: str = Field(description="API TRAVEL для глобального подбора рейсов")
-    TGIS_API_KEY: str = Field(description="API 2GIS")
+    TRAVEL_API_KEY: str = Field(
+        default="",
+        description="API TRAVEL для глобального подбора рейсов (в проде задается через env)",
+    )
+    TGIS_API_KEY: str = Field(
+        default="",
+        description="API 2GIS (в проде задается через env)",
+    )
 
     @property
     def frontend_cors_origins_list(self) -> list[str]:

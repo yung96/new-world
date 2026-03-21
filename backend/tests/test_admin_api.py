@@ -31,6 +31,7 @@ async def test_admin_can_edit_post_and_interest_set(client):
         json={
             "mediaUrls": [],
             "title": "Старое место",
+            "city": "Москва",
             "description": "старое описание",
             "geoLat": 55.75,
             "geoLng": 37.61,
