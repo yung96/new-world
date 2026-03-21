@@ -22,6 +22,7 @@ class Post(Base):
     author_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     media_urls = Column(JSONB, nullable=False, default=list)
     title = Column(String, nullable=False)
+    city = Column(String, nullable=True)
     description = Column(Text, nullable=True)
     geo_lat = Column(Float, nullable=True)
     geo_lng = Column(Float, nullable=True)

@@ -18,3 +18,4 @@ slugify
 tenacity
 openai
 requests
+openrouteservice

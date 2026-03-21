@@ -75,6 +75,60 @@ class CheapFlightsResponseDTO(BasePydanticModel):
     data: list[FlightDataDTO]
 
 
+class RequestPoint(BasePydanticModel):
+    lat: float = Field(examples=[43.45])
+    lon: float = Field(examples=[39.96])
+
+
+class RouteInfoRequestDTO(BasePydanticModel):
+    points: list[RequestPoint] = Field(
+        ...,
+        description="Список координат точек маршрута",
+        examples=[
+            [
+                {"lat": 54.99770587584445, "lon": 82.79502868652345},
+                {"lat": 54.99928130973027, "lon": 82.92137145996095},
+                {"lat": 55.04533538802211, "lon": 82.98179626464844},
+                {"lat": 55.072470687600536, "lon": 83.04634094238281},
+            ]
+        ],
+    )
+    sources: list[int] = Field(
+        ...,
+        description="Индексы точек отправления в points",
+        examples=[[0, 1]],
+    )
+    targets: list[int] = Field(
+        ...,
+        description="Индексы точек прибытия в points",
+        examples=[[2, 3]],
+    )
+    transport: Literal[
+        "driving",
+        "taxi",
+        "truck",
+        "walking",
+        "bicycle",
+        "scooter",
+        "motorcycle",
+        "public_transport",
+    ] = "driving"
+    start_time: Optional[str] = None
+
+
+class RouteInfoPointDTO(BasePydanticModel):
+    source_id: int
+    target_id: int
+    distance: int  # метры
+    duration: int  # секунды
+    reliability: Optional[float] = None
+
+
+class RouteInfoResponseDTO(BasePydanticModel):
+    status: str
+    routes: list[RouteInfoPointDTO]
+
+
 # --- Настройка FastAPI ---
 
 router = APIRouter()
@@ -117,3 +171,29 @@ async def get_global_route(
 ):
     payload = await service.get_global_route(data.model_dump(exclude_none=True))
     return CheapFlightsResponseDTO(**payload)
+
+
+@router.post(
+    "/route_info",
+    response_model=RouteInfoResponseDTO,
+    status_code=status.HTTP_200_OK,
+    summary="Получение информации о расстоянии и времени в пути между точками",
+    description="Запрос вернет длину маршрута в метрах (distance) "
+    "и время в пути в секундах (duration) для каждой пары точек отправления-прибытия",
+)
+async def get_route_info(
+    data: RouteInfoRequestDTO,
+    service: TravelService = Depends(get_travel_service),
+):
+    payload = await service.get_route_info(data.model_dump(exclude_none=True))
+    routes = [
+        RouteInfoPointDTO(
+            source_id=item["source_id"],
+            target_id=item["target_id"],
+            distance=item["distance"],
+            duration=item["duration"],
+            reliability=item.get("reliability"),
+        )
+        for item in payload.get("routes", [])
+    ]
+    return RouteInfoResponseDTO(status="OK", routes=routes)

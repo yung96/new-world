@@ -136,7 +136,11 @@ cities = [
 
 
 class TravelService:
+    # API TRAVEL PAYOUTS
     BASE_URL = "https://api.travelpayouts.com/aviasales/v3"
+    # API 2GIS
+    BASE_URL_2GIS = "https://routing.api.2gis.com"
+    # https://openrouteservice.org/ (SDK)
 
     def __init__(self):
         pass
@@ -199,3 +203,17 @@ class TravelService:
         Пока просто статический список.
         """
         return cities
+
+    async def get_route_info(self, body: dict) -> dict:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                self.BASE_URL_2GIS + "/get_dist_matrix",
+                params={
+                    "key": settings.TGIS_API_KEY,
+                    "version": "2.0",
+                    "response_format": "json",
+                },
+                json=body,
+            )
+            response.raise_for_status()
+            return response.json()

@@ -8,12 +8,15 @@ async def _auth_headers(client, phone: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-async def _create_post(client, headers: dict[str, str], *, title: str = "Тестовый пост") -> int:
+async def _create_post(
+    client, headers: dict[str, str], *, title: str = "Тестовый пост"
+) -> int:
     resp = await client.post(
         "/api/user/posts",
         json={
             "mediaUrls": [],
             "title": title,
+            "city": "Сочи",
             "description": "Описание",
             "geoLat": 55.75,
             "geoLng": 37.61,
@@ -29,7 +32,9 @@ async def _create_post(client, headers: dict[str, str], *, title: str = "Тес�
 async def test_post_create_and_delete_cycle(client):
     creator_headers = await _auth_headers(client, "+70000000001")
 
-    interest_resp = await client.post("/api/interests", json={"name": "Пешие маршруты"}, headers=creator_headers)
+    interest_resp = await client.post(
+        "/api/interests", json={"name": "Пешие маршруты"}, headers=creator_headers
+    )
     assert interest_resp.status_code == 201
     interest_id = interest_resp.json()["id"]
 
@@ -38,6 +43,7 @@ async def test_post_create_and_delete_cycle(client):
         json={
             "mediaUrls": ["/api/uploads/x1.jpg"],
             "title": "Тестовый пост",
+            "city": "Сочи",
             "description": "Описание",
             "geoLat": 55.7961,
             "geoLng": 49.1064,
@@ -84,6 +90,7 @@ async def test_post_create_requires_auth(client):
         json={
             "mediaUrls": [],
             "title": "Без токена",
+            "city": "Сочи",
             "description": None,
             "geoLat": 55.75,
             "geoLng": 37.61,
@@ -101,6 +108,7 @@ async def test_post_create_invalid_coordinates_returns_422(client):
         json={
             "mediaUrls": [],
             "title": "Неверные координаты",
+            "city": "Сочи",
             "description": None,
             "geoLat": 100.0,
             "geoLng": 200.0,
@@ -119,6 +127,7 @@ async def test_post_create_with_missing_interest_returns_404(client):
         json={
             "mediaUrls": [],
             "title": "С несуществующим интересом",
+            "city": "Сочи",
             "description": None,
             "geoLat": 55.75,
             "geoLng": 37.61,
@@ -152,7 +161,9 @@ async def test_post_delete_is_open_for_mvp(client):
 
 async def test_post_interest_add_remove_cycle_open_for_mvp(client):
     headers = await _auth_headers(client, "+70000000012")
-    interest_resp = await client.post("/api/interests", json={"name": "Архитектура"}, headers=headers)
+    interest_resp = await client.post(
+        "/api/interests", json={"name": "Архитектура"}, headers=headers
+    )
     assert interest_resp.status_code == 201
     interest_id = interest_resp.json()["id"]
     post_id = await _create_post(client, headers)
