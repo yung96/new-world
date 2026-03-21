@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from app.db import async_session_factory
 from app.models.post import Post
-from app.models.route import RouteSegment, SegmentItem
+from app.models.route import Route, RouteSegment, SegmentItem
 from app.services.pipeline.helpers import nearest_n
 
 
@@ -16,8 +16,8 @@ async def step_recommend(route_id: int, params: dict[str, Any]) -> None:
     async with async_session_factory() as db:
         items = (await db.execute(
             select(SegmentItem).join(RouteSegment)
-            .where(RouteSegment.route_id == route_id, SegmentItem.type == "experience", SegmentItem.parent_id.is_(None))
-            .order_by(SegmentItem.position)
+            .where(RouteSegment.route_id == route_id, SegmentItem.type == "experience", SegmentItem.parent_id.isnot(None))
+            .order_by(RouteSegment.position, SegmentItem.position)
         )).scalars().all()
 
         if not items:
@@ -92,6 +92,13 @@ async def step_recommend(route_id: int, params: dict[str, Any]) -> None:
                     segment_id=seg_id, parent_id=mid_item.id, type="experience", position=rec_pos,
                     details=json.dumps({"recommendation_type": "fuel", "options": fuel_options}),
                 ))
+
+        # Update counters
+        route = await db.get(Route, route_id)
+        if route:
+            route.total_hotels = len(stay_options)
+            if params.get("transport") == "car":
+                route.total_transports = 1  # car rental implicit
 
         await db.commit()
         logger.info("[pipeline] recommend: route {}", route_id)

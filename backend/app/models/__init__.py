@@ -48,6 +48,7 @@ from app.models.schedule import PlaceSchedule, PlaceScheduleOverride, PostMedia,
 from app.models.tag import PlaceTag, Tag, TagCategory, UserTag
 from app.models.tour import Service, ServiceType, Tour, TourService
 from app.models.user import User
+from app.models.user_saved_route import UserSavedRoute, UserSavedRouteItem
 
 __all__ = [
     # Core models

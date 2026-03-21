@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date, timedelta
 from typing import Any
 
 from loguru import logger
@@ -10,7 +11,35 @@ from sqlalchemy.orm import selectinload
 from app.db import async_session_factory
 from app.models.post import Post
 from app.models.route import Route, RouteSegment, SegmentItem
-from app.services.pipeline.helpers import INTEREST_QUERIES, PACE_POINTS, season_from_dates
+from app.services.pipeline.helpers import (
+    INTEREST_QUERIES, PACE_POINTS, haversine, season_from_dates, parse_date,
+)
+
+# Points per day by pace
+POINTS_PER_DAY = {"relaxed": 2, "balanced": 3, "intensive": 5}
+
+
+def _cluster_nearby(posts: list[Post], max_km: float = 50) -> list[Post]:
+    """Pick posts that are close to each other. Start with highest-scored, greedily add nearest."""
+    if not posts:
+        return []
+    result = [posts[0]]
+    remaining = list(posts[1:])
+
+    while remaining:
+        last = result[-1]
+        best_idx, best_dist = 0, 999999.0
+        for i, p in enumerate(remaining):
+            d = haversine(last.geo_lat, last.geo_lng, p.geo_lat, p.geo_lng)
+            if d < best_dist:
+                best_dist = d
+                best_idx = i
+        # Stop if too far
+        if best_dist > max_km:
+            break
+        result.append(remaining.pop(best_idx))
+
+    return result
 
 
 async def step_scoring(route_id: int, params: dict[str, Any]) -> None:
@@ -21,10 +50,16 @@ async def step_scoring(route_id: int, params: dict[str, Any]) -> None:
 
         interests = params.get("interests", [])
         pace = params.get("pace", "balanced")
-        n = PACE_POINTS.get(pace, 5)
         budget = params.get("budget")
         transport = params.get("transport")
         season = season_from_dates(params.get("dateFrom"), params.get("dateTo"))
+
+        d_from = parse_date(params.get("dateFrom")) or date.today()
+        d_to = parse_date(params.get("dateTo")) or d_from + timedelta(days=1)
+        trip_days = max(1, (d_to - d_from).days + 1)
+
+        ppd = POINTS_PER_DAY.get(pace, 3)
+        total_points = trip_days * ppd
 
         search_terms = []
         for interest in interests:
@@ -38,6 +73,7 @@ async def step_scoring(route_id: int, params: dict[str, Any]) -> None:
         stmt = stmt.options(selectinload(Post.interests)).limit(500)
         posts = (await db.execute(stmt)).scalars().all()
 
+        # Score by interest match + season
         scored = []
         for p in posts:
             post_interests = {i.name.lower() for i in p.interests}
@@ -48,27 +84,80 @@ async def step_scoring(route_id: int, params: dict[str, Any]) -> None:
                     score += 10
             if str(p.season) == season:
                 score += 5
+            # Exclude generic food from main points (goes to recommendations)
+            if p.description in ("Ресторан", "Кафе", "Автозаправочная станция"):
+                score -= 20
             scored.append((score, p))
 
         scored.sort(key=lambda x: -x[0])
-        top_posts = [p for _, p in scored[:n]]
+        # Take more candidates than needed, then cluster
+        candidates = [p for sc, p in scored[:total_points * 3] if sc > 0]
 
-        if not top_posts:
+        if not candidates:
+            candidates = [p for _, p in scored[:total_points]]
+
+        # Cluster: pick nearby points starting from best
+        clustered = _cluster_nearby(candidates, max_km=80)[:total_points]
+
+        if not clustered:
             return
 
-        seg = RouteSegment(route_id=route_id, position=0, title=route.title)
-        db.add(seg)
-        await db.flush()
+        # Split into days
+        route.total_days = trip_days
+        route.total_experiences = len(clustered)
 
-        for i, p in enumerate(top_posts):
-            db.add(SegmentItem(
-                segment_id=seg.id, type="experience", position=i,
+        for day_idx in range(trip_days):
+            day_start = day_idx * ppd
+            day_end = min(day_start + ppd, len(clustered))
+            day_posts = clustered[day_start:day_end]
+            if not day_posts:
+                break
+
+            current_date = d_from + timedelta(days=day_idx)
+
+            seg = RouteSegment(
+                route_id=route_id,
+                position=day_idx,
+                title=f"День {day_idx + 1}",
+                date_from=current_date,
+                date_to=current_date,
+            )
+            db.add(seg)
+            await db.flush()
+
+            # Day item
+            day_item = SegmentItem(
+                segment_id=seg.id,
+                type="day",
+                position=0,
                 details=json.dumps({
-                    "name": p.title, "lat": p.geo_lat, "lng": p.geo_lng,
-                    "post_id": p.id, "description": p.description,
+                    "day_number": day_idx + 1,
+                    "date": str(current_date),
+                    "title": f"День {day_idx + 1}",
+                    "experience_count": len(day_posts),
                 }),
-            ))
+            )
+            db.add(day_item)
+            await db.flush()
 
-        route.total_experiences = len(top_posts)
+            # Experiences inside day
+            for i, p in enumerate(day_posts):
+                db.add(SegmentItem(
+                    segment_id=seg.id,
+                    parent_id=day_item.id,
+                    type="experience",
+                    position=i,
+                    details=json.dumps({
+                        "name": p.title,
+                        "lat": p.geo_lat,
+                        "lng": p.geo_lng,
+                        "post_id": p.id,
+                        "description": p.description,
+                    }),
+                ))
+
         await db.commit()
-        logger.info("[pipeline] scoring: {} places for route {}", len(top_posts), route_id)
+        logger.info(
+            "[pipeline] scoring: {} places, {} days for route {}",
+            len(clustered), trip_days, route_id,
+        )

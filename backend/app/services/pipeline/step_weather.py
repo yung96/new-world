@@ -17,8 +17,8 @@ async def step_weather(route_id: int, params: dict[str, Any]) -> None:
     async with async_session_factory() as db:
         item = (await db.execute(
             select(SegmentItem).join(RouteSegment)
-            .where(RouteSegment.route_id == route_id, SegmentItem.type == "experience", SegmentItem.parent_id.is_(None))
-            .order_by(SegmentItem.position).limit(1)
+            .where(RouteSegment.route_id == route_id, SegmentItem.type == "experience", SegmentItem.parent_id.isnot(None))
+            .order_by(RouteSegment.position, SegmentItem.position).limit(1)
         )).scalars().first()
 
         if not item:

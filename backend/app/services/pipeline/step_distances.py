@@ -13,10 +13,15 @@ from app.services.pipeline.helpers import haversine
 
 async def step_distances(route_id: int, params: dict[str, Any]) -> None:
     async with async_session_factory() as db:
+        # Get all experiences (they now live inside days via parent_id)
         items = (await db.execute(
             select(SegmentItem).join(RouteSegment)
-            .where(RouteSegment.route_id == route_id, SegmentItem.type == "experience")
-            .order_by(SegmentItem.position)
+            .where(
+                RouteSegment.route_id == route_id,
+                SegmentItem.type == "experience",
+                SegmentItem.parent_id.isnot(None),  # inside a day
+            )
+            .order_by(RouteSegment.position, SegmentItem.position)
         )).scalars().all()
 
         if len(items) < 2:

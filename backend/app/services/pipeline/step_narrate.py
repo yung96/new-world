@@ -18,8 +18,8 @@ async def step_narrate(route_id: int, params: dict[str, Any]) -> None:
 
         items = (await db.execute(
             select(SegmentItem).join(RouteSegment)
-            .where(RouteSegment.route_id == route_id, SegmentItem.type == "experience", SegmentItem.parent_id.is_(None))
-            .order_by(SegmentItem.position)
+            .where(RouteSegment.route_id == route_id, SegmentItem.type == "experience", SegmentItem.parent_id.isnot(None))
+            .order_by(RouteSegment.position, SegmentItem.position)
         )).scalars().all()
 
         recs = (await db.execute(
