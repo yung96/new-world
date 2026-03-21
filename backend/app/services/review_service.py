@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.models.post import Post
 from app.models.review import Review
 from app.models.user import User
+from app.services.social_service import SocialService
 
 
 class ReviewService:
@@ -25,6 +26,15 @@ class ReviewService:
         if post is None:
             raise HTTPException(status_code=404, detail="Post not found")
 
+        prior_count_stmt = select(func.count(Review.id)).where(
+            Review.author_id == author.id,
+            Review.post_id == post_id,
+        )
+        prior_reviews = int(
+            (await self.db.execute(prior_count_stmt)).scalar_one() or 0
+        )
+        first_review_on_post = prior_reviews == 0
+
         review = Review(
             author_id=author.id,
             post_id=post_id,
@@ -33,6 +43,10 @@ class ReviewService:
             media_urls=media_urls,
         )
         self.db.add(review)
+        if first_review_on_post:
+            await SocialService(self.db).apply_post_engagement_weights(
+                user=author, post_id=post_id, source="review"
+            )
         await self.db.commit()
         await self.db.refresh(review)
         return await self.get_review_or_404(review.id)

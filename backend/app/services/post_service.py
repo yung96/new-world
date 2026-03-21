@@ -10,6 +10,7 @@ from app.models.interest import Interest
 from app.models.post import Post, Season
 from app.models.review import Review
 from app.models.user import User
+from app.services.social_service import SocialService
 
 
 class PostService:
@@ -233,6 +234,10 @@ class PostService:
         if not exists:
             await self.db.execute(
                 user_favorite_posts.insert().values(user_id=user.id, post_id=post_id)
+            )
+            # веса — один раз на пару (user, post): повторный add_favorite не вызывается
+            await SocialService(self.db).apply_post_engagement_weights(
+                user=user, post_id=post_id, source="favorite"
             )
             await self.db.commit()
 

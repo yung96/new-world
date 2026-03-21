@@ -1,0 +1,18 @@
+export const interests = [
+  { id: 1, name: "Пешие прогулки", name_en: "hiking", emoji: "🥾" },
+  { id: 2, name: "Активный спорт", name_en: "sport", emoji: "⚡" },
+  { id: 3, name: "Прогулки с детьми", name_en: "kids", emoji: "👨‍👩‍👧" },
+  { id: 4, name: "Природа и горы", name_en: "nature", emoji: "🏔️" },
+  { id: 5, name: "Пляжный отдых", name_en: "beach", emoji: "🏖️" },
+  { id: 6, name: "История и архитектура", name_en: "history", emoji: "🏛️" },
+  { id: 7, name: "Вино и гастрономия", name_en: "gastro", emoji: "🍷" },
+  { id: 8, name: "Экстрим", name_en: "extreme", emoji: "🪂" },
+  { id: 9, name: "Фотография", name_en: "photo", emoji: "📸" },
+  { id: 10, name: "Ночная жизнь", name_en: "nightlife", emoji: "🌃" },
+  { id: 11, name: "Велосипед", name_en: "cycling", emoji: "🚴" },
+  { id: 12, name: "Йога и медитация", name_en: "yoga", emoji: "🧘" },
+  { id: 13, name: "Рыбалка", name_en: "fishing", emoji: "🎣" },
+  { id: 14, name: "Кемпинг", name_en: "camping", emoji: "⛺" },
+  { id: 15, name: "Водные виды спорта", name_en: "watersports", emoji: "🏄" },
+  { id: 16, name: "Романтика", name_en: "romantic", emoji: "💕" },
+];

@@ -1,12 +1,26 @@
+from __future__ import annotations
+
+from typing import Literal
+
 from fastapi import HTTPException, status
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.achievement import Achievement
 from app.models.associations import user_achievements, user_friends, user_interests
 from app.models.friend_request import FriendRequest, FriendRequestStatus
 from app.models.interest import Interest
+from app.models.post import Post
 from app.models.user import User
+
+# Веса по взаимодействию с карточкой (постом)
+MIN_INTEREST_WEIGHT = 1
+BONUS_INTEREST_WEIGHT_FAVORITE = 1
+BONUS_INTEREST_WEIGHT_REVIEW = 2
+PASSIVE_INTEREST_WEIGHT_DECAY = 1
+
+PostEngagementSource = Literal["favorite", "review"]
 
 
 class SocialService:
@@ -187,6 +201,80 @@ class SocialService:
         )
         rows = (await self.db.execute(stmt)).all()
         return {row.interest_id: row.weight for row in rows}
+
+    async def apply_post_engagement_weights(
+        self,
+        *,
+        user: User,
+        post_id: int,
+        source: PostEngagementSource,
+    ) -> None:
+        """Корректирует веса интересов пользователя после отзыва или добавления в избранное.
+
+        Ожидается не более одного срабатывания на пару (пользователь, пост) на тип события:
+        избранное вызывает только при первом добавлении, отзыв — только при первом отзыве
+        этого пользователя на пост (см. ReviewService).
+
+        Не вызывает commit — вызывающий код фиксирует транзакцию.
+        """
+        bonus = (
+            BONUS_INTEREST_WEIGHT_FAVORITE
+            if source == "favorite"
+            else BONUS_INTEREST_WEIGHT_REVIEW
+        )
+
+        stmt = (
+            select(Post)
+            .where(Post.id == post_id)
+            .options(selectinload(Post.interests))
+            .limit(1)
+        )
+        post = (await self.db.execute(stmt)).scalar_one_or_none()
+        if post is None:
+            raise HTTPException(status_code=404, detail="Post not found")
+
+        post_interest_ids = {i.id for i in post.interests}
+
+        decay_conditions = [user_interests.c.user_id == user.id]
+        if post_interest_ids:
+            decay_conditions.append(
+                user_interests.c.interest_id.not_in(post_interest_ids)
+            )
+        await self.db.execute(
+            user_interests.update()
+            .where(and_(*decay_conditions))
+            .values(
+                weight=func.greatest(
+                    MIN_INTEREST_WEIGHT,
+                    user_interests.c.weight - PASSIVE_INTEREST_WEIGHT_DECAY,
+                )
+            )
+        )
+
+        for interest_id in post_interest_ids:
+            exists_stmt = select(user_interests.c.weight).where(
+                user_interests.c.user_id == user.id,
+                user_interests.c.interest_id == interest_id,
+            )
+            row = (await self.db.execute(exists_stmt)).first()
+            if row is not None:
+                await self.db.execute(
+                    user_interests.update()
+                    .where(
+                        user_interests.c.user_id == user.id,
+                        user_interests.c.interest_id == interest_id,
+                    )
+                    .values(weight=user_interests.c.weight + bonus)
+                )
+            else:
+                new_weight = max(MIN_INTEREST_WEIGHT, MIN_INTEREST_WEIGHT + bonus)
+                await self.db.execute(
+                    user_interests.insert().values(
+                        user_id=user.id,
+                        interest_id=interest_id,
+                        weight=new_weight,
+                    )
+                )
 
     async def create_achievement(
         self, *, name: str, description: str | None
