@@ -15,11 +15,18 @@ OPENAPI_TAGS = [
     },
     {
         "name": "Auth & Users",
-        "description": "Авторизация по телефону и получение данных текущего пользователя.",
+        "description": (
+            "Авторизация по телефону (`POST /api/auth`), профиль «я» (`GET /api/users/me`), "
+            "публичный профиль пользователя (`GET /api/users/{user_id}` — подписчики и отзывы)."
+        ),
     },
     {
         "name": "Social",
-        "description": "Социальные сущности: интересы, достижения, друзья и заявки в друзья.",
+        "description": (
+            "Интересы, достижения, подписки. Управление подписками: "
+            "`POST /api/subscriptions` (тело `{\"targetUserId\": number}`), "
+            "`GET /api/subscriptions`, `DELETE /api/subscriptions/{target_user_id}`."
+        ),
     },
     {
         "name": "Posts",
@@ -35,7 +42,16 @@ OPENAPI_TAGS = [
     },
     {
         "name": "User",
-        "description": "Обычные пользовательские endpoint-ы (создание мест, избранное).",
+        "description": (
+            "Действия текущего пользователя: создание мест (`POST /user/posts`), избранное, "
+            "персонализированная лента мест (`GET /user/feed`), "
+            "**лента активности подписок** (`GET /user/subscriptions/feed` — отзывы от авторов, "
+            "на которых вы подписаны, по времени; без рекомендаций), свайпы."
+        ),
+    },
+    {
+        "name": "Travel",
+        "description": "Маршруты и перелеты: города, глобальные маршруты и route info.",
     },
     {
         "name": "Travel",
@@ -56,7 +72,9 @@ fastapi_app = FastAPI(
         "1. Получите токен через `POST /api/auth`.\n"
         "2. Нажмите `Authorize` и вставьте `Bearer <ваш_токен>`.\n"
         "3. Используйте защищенные эндпоинты для работы с user/social-функциями.\n"
-        "4. Для MVP admin-дашборд открыт по `/api/admin` (без привязки к пользователю).\n\n"
+        "4. Лента отзывов от подписок (фронт): `GET /api/user/subscriptions/feed?page=1&pageSize=20` "
+        "(тот же токен).\n"
+        "5. Для MVP admin-дашборд открыт по `/api/admin` (без привязки к пользователю).\n\n"
         "### Пагинация\n"
         "Во всех list-эндпоинтах используются параметры `page` и `pageSize`.\n\n"
         "### Ошибки\n"

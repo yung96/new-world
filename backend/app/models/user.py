@@ -5,8 +5,8 @@ from app.models import Base
 from app.models.associations import (
     user_achievements,
     user_favorite_posts,
-    user_friends,
     user_interests,
+    user_subscriptions,
 )
 
 
@@ -33,22 +33,10 @@ class User(Base):
         "Post", secondary=user_favorite_posts, back_populates="favorited_by_users"
     )
 
-    friends = relationship(
+    following = relationship(
         "User",
-        secondary=user_friends,
-        primaryjoin=id == user_friends.c.user_id,
-        secondaryjoin=id == user_friends.c.friend_id,
-        backref="friend_of",
-    )
-    sent_friend_requests = relationship(
-        "FriendRequest",
-        foreign_keys="FriendRequest.requester_id",
-        back_populates="requester",
-        cascade="all, delete-orphan",
-    )
-    received_friend_requests = relationship(
-        "FriendRequest",
-        foreign_keys="FriendRequest.receiver_id",
-        back_populates="receiver",
-        cascade="all, delete-orphan",
+        secondary=user_subscriptions,
+        primaryjoin=id == user_subscriptions.c.subscriber_id,
+        secondaryjoin=id == user_subscriptions.c.following_id,
+        backref="followers",
     )

@@ -3,11 +3,11 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.associations import post_interests, user_favorite_posts, user_interests
+from app.models.associations import post_interests, user_favorite_posts, user_interests, user_subscriptions
 from app.models.post import Post
 from app.models.review import Review
 from app.models.user import User
@@ -37,10 +37,46 @@ class FeedService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def list_subscription_activity(
+        self,
+        *,
+        user: User,
+        page: int,
+        page_size: int,
+    ) -> tuple[list[Review], int]:
+        offset = (page - 1) * page_size
+        join_cond = and_(
+            user_subscriptions.c.following_id == Review.author_id,
+            user_subscriptions.c.subscriber_id == user.id,
+        )
+        total_stmt = select(func.count(Review.id)).select_from(Review).join(
+            user_subscriptions, join_cond
+        )
+        total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
+        stmt = (
+            select(Review)
+            .join(user_subscriptions, join_cond)
+            .options(selectinload(Review.author), selectinload(Review.post))
+            .order_by(Review.created_at.desc(), Review.id.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        items = (await self.db.execute(stmt)).scalars().all()
+        return list(items), total
+
     async def list_feed(
-        self, *, user: User, page: int, page_size: int
+        self,
+        *,
+        user: User,
+        page: int,
+        page_size: int,
+        exclude_post_ids: set[int] | None = None,
     ) -> tuple[list[tuple[Post, float | None]], int]:
+        exclude_post_ids = exclude_post_ids or set()
+
         total_stmt = select(func.count(Post.id))
+        if exclude_post_ids:
+            total_stmt = total_stmt.where(Post.id.not_in(exclude_post_ids))
         total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
 
         if page_size <= 0 or total == 0:
@@ -55,7 +91,9 @@ class FeedService:
             .limit(CANDIDATE_POST_LIMIT)
         )
         cand_rows = (await self.db.execute(cand_stmt)).all()
-        candidate_ids = [int(r.id) for r in cand_rows]
+        candidate_ids = [
+            int(r.id) for r in cand_rows if int(r.id) not in exclude_post_ids
+        ]
         created = {int(r.id): r.created_at for r in cand_rows}
 
         if not candidate_ids:
@@ -103,13 +141,15 @@ class FeedService:
 
         offset = (page - 1) * page_size
         if offset >= len(merged):
+            if exclude_post_ids:
+                return [], total
             return await PostService(self.db).list_posts(page=page, page_size=page_size)
 
         window = merged[offset : offset + page_size]
 
         if len(window) < page_size:
             fallback = await self._chronological_ids_excluding(
-                exclude=set(window),
+                exclude=set(window) | exclude_post_ids,
                 need=page_size - len(window),
                 skip=offset + len(merged),
             )

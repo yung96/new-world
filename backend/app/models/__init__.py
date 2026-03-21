@@ -9,10 +9,10 @@ from app.models.associations import (
     post_interests,
     user_achievements,
     user_favorite_posts,
-    user_friends,
     user_interests,
+    user_subscriptions,
+    user_swiped_posts,
 )
-from app.models.friend_request import FriendRequest, FriendRequestStatus
 from app.models.interest import Interest
 from app.models.post import Post
 from app.models.review import Review
@@ -20,8 +20,6 @@ from app.models.user import User
 
 __all__ = [
     "Achievement",
-    "FriendRequest",
-    "FriendRequestStatus",
     "Interest",
     "Post",
     "Review",
@@ -29,6 +27,7 @@ __all__ = [
     "post_interests",
     "user_achievements",
     "user_favorite_posts",
-    "user_friends",
     "user_interests",
+    "user_subscriptions",
+    "user_swiped_posts",
 ]
