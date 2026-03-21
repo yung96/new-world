@@ -38,9 +38,18 @@ class FeedService:
         self.db = db
 
     async def list_feed(
-        self, *, user: User, page: int, page_size: int
+        self,
+        *,
+        user: User,
+        page: int,
+        page_size: int,
+        exclude_post_ids: set[int] | None = None,
     ) -> tuple[list[tuple[Post, float | None]], int]:
+        exclude_post_ids = exclude_post_ids or set()
+
         total_stmt = select(func.count(Post.id))
+        if exclude_post_ids:
+            total_stmt = total_stmt.where(Post.id.not_in(exclude_post_ids))
         total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
 
         if page_size <= 0 or total == 0:
@@ -55,7 +64,9 @@ class FeedService:
             .limit(CANDIDATE_POST_LIMIT)
         )
         cand_rows = (await self.db.execute(cand_stmt)).all()
-        candidate_ids = [int(r.id) for r in cand_rows]
+        candidate_ids = [
+            int(r.id) for r in cand_rows if int(r.id) not in exclude_post_ids
+        ]
         created = {int(r.id): r.created_at for r in cand_rows}
 
         if not candidate_ids:
@@ -103,13 +114,15 @@ class FeedService:
 
         offset = (page - 1) * page_size
         if offset >= len(merged):
+            if exclude_post_ids:
+                return [], total
             return await PostService(self.db).list_posts(page=page, page_size=page_size)
 
         window = merged[offset : offset + page_size]
 
         if len(window) < page_size:
             fallback = await self._chronological_ids_excluding(
-                exclude=set(window),
+                exclude=set(window) | exclude_post_ids,
                 need=page_size - len(window),
                 skip=offset + len(merged),
             )

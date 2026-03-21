@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, Query, status
+from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
+from app.api.base_schema import BasePydanticModel
 from app.api.posts import PostCreateRequest, PostListResponse, PostResponse
 from app.core.dependencies import get_db_session
 from app.models.user import User
 from app.services.feed_service import FeedService
 from app.services.post_service import PostService
+from app.services.swipe_service import SwipeDirection, SwipeService
 
 router = APIRouter(prefix="/user")
 
@@ -19,9 +22,54 @@ def _feed_service(db: AsyncSession) -> FeedService:
     return FeedService(db)
 
 
+def _swipe_service(db: AsyncSession) -> SwipeService:
+    return SwipeService(db)
+
+
 def _city_or_empty(value: str | None) -> str:
     # Backward compatibility for legacy rows created before city became required.
     return (value or "").strip()
+
+
+def _to_post_response(post, avg_rating: float | None) -> PostResponse:
+    return PostResponse(
+        id=post.id,
+        mediaUrls=list(post.media_urls or []),
+        title=post.title,
+        city=_city_or_empty(post.city),
+        description=post.description,
+        geoLat=post.geo_lat,
+        geoLng=post.geo_lng,
+        interestIds=[interest.id for interest in post.interests],
+        season=post.season,
+        averageRating=(round(float(avg_rating), 2) if avg_rating is not None else None),
+        createdAt=post.created_at,
+        updatedAt=post.updated_at,
+    )
+
+
+class SwipeRequest(BasePydanticModel):
+    postId: int
+    direction: SwipeDirection
+
+
+class SwipeActionResponse(BasePydanticModel):
+    postId: int
+    direction: SwipeDirection
+    alreadySwiped: bool = Field(
+        description="true, если карточка уже была свайпнута ранее."
+    )
+    addedToFavorites: bool = Field(
+        description="true, если свайп вправо добавил карточку в избранное."
+    )
+
+
+class SwipeNextResponse(BasePydanticModel):
+    done: bool = Field(
+        description="true, если карточки закончились и показывать больше нечего."
+    )
+    message: str | None = Field(default=None, description="Сообщение для клиента.")
+    post: PostResponse | None = Field(default=None, description="Следующая карточка.")
 
 
 @router.post(
@@ -49,20 +97,7 @@ async def user_create_post(
         interest_ids=payload.interestIds,
     )
     post, avg_rating = await _service(db).get_post_or_404(created.id)
-    return PostResponse(
-        id=post.id,
-        mediaUrls=list(post.media_urls or []),
-        title=post.title,
-        city=_city_or_empty(post.city),
-        description=post.description,
-        geoLat=post.geo_lat,
-        geoLng=post.geo_lng,
-        interestIds=[interest.id for interest in post.interests],
-        season=post.season,
-        averageRating=(round(float(avg_rating), 2) if avg_rating is not None else None),
-        createdAt=post.created_at,
-        updatedAt=post.updated_at,
-    )
+    return _to_post_response(post, avg_rating)
 
 
 @router.post(
@@ -109,25 +144,7 @@ async def list_favorites(
     rows, total = await _service(db).list_favorites(
         user=current_user, page=page, page_size=pageSize
     )
-    items = [
-        PostResponse(
-            id=post.id,
-            mediaUrls=list(post.media_urls or []),
-            title=post.title,
-            city=_city_or_empty(post.city),
-            description=post.description,
-            geoLat=post.geo_lat,
-            geoLng=post.geo_lng,
-            interestIds=[interest.id for interest in post.interests],
-            season=post.season,
-            averageRating=(
-                round(float(avg_rating), 2) if avg_rating is not None else None
-            ),
-            createdAt=post.created_at,
-            updatedAt=post.updated_at,
-        )
-        for post, avg_rating in rows
-    ]
+    items = [_to_post_response(post, avg_rating) for post, avg_rating in rows]
     return PostListResponse(items=items, total=total, page=page, pageSize=pageSize)
 
 
@@ -149,24 +166,64 @@ async def user_feed(
     rows, total = await _feed_service(db).list_feed(
         user=current_user, page=page, page_size=pageSize
     )
-    items = [
-        PostResponse(
-            id=post.id,
-            mediaUrls=list(post.media_urls or []),
-            title=post.title,
-            city=_city_or_empty(post.city),
-            description=post.description,
-            geoLat=post.geo_lat,
-            geoLng=post.geo_lng,
-            interestIds=[interest.id for interest in post.interests],
-            season=post.season,
-            averageRating=(
-                round(float(avg_rating), 2) if avg_rating is not None else None
-            ),
-            createdAt=post.created_at,
-            updatedAt=post.updated_at,
-        )
-        for post, avg_rating in rows
-    ]
+    items = [_to_post_response(post, avg_rating) for post, avg_rating in rows]
     return PostListResponse(items=items, total=total, page=page, pageSize=pageSize)
+
+
+@router.get(
+    "/swipes/next",
+    response_model=SwipeNextResponse,
+    summary="Следующая карточка для свайпа",
+    description=(
+        "Возвращает следующую карточку на основе рекомендательной ленты. "
+        "Уже свайпнутые карточки исключаются."
+    ),
+    response_description="Следующая карточка или сообщение, что карточки закончились.",
+)
+async def get_next_swipe_card(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    row, _ = await _swipe_service(db).get_next_card(user=current_user)
+    if row is None:
+        return SwipeNextResponse(
+            done=True,
+            message="Карточки закончились",
+            post=None,
+        )
+    post, avg_rating = row
+    return SwipeNextResponse(
+        done=False,
+        message=None,
+        post=_to_post_response(post, avg_rating),
+    )
+
+
+@router.post(
+    "/swipes",
+    response_model=SwipeActionResponse,
+    summary="Свайпнуть карточку",
+    description=(
+        "Регистрирует свайп по карточке. "
+        "Свайп вправо добавляет карточку в избранное и повышает веса интересов, "
+        "свайп влево не изменяет веса."
+    ),
+    response_description="Результат обработки свайпа.",
+)
+async def swipe_card(
+    payload: SwipeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    inserted = await _swipe_service(db).swipe(
+        user=current_user,
+        post_id=payload.postId,
+        direction=payload.direction,
+    )
+    return SwipeActionResponse(
+        postId=payload.postId,
+        direction=payload.direction,
+        alreadySwiped=not inserted,
+        addedToFavorites=inserted and payload.direction is SwipeDirection.right,
+    )
 

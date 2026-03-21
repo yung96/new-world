@@ -11,6 +11,7 @@ from app.models.associations import (
     user_favorite_posts,
     user_friends,
     user_interests,
+    user_swiped_posts,
 )
 from app.models.friend_request import FriendRequest, FriendRequestStatus
 from app.models.interest import Interest
@@ -31,4 +32,5 @@ __all__ = [
     "user_favorite_posts",
     "user_friends",
     "user_interests",
+    "user_swiped_posts",
 ]
