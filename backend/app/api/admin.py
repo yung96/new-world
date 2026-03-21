@@ -784,6 +784,7 @@ async def admin_update_post(
 @router.post(
     "/interests",
     response_model=AdminInterestCard,
+    status_code=201,
     summary="Admin: создать интерес",
     description="Создает новый интерес в справочнике интересов.",
     response_description="Созданный интерес.",

@@ -5,6 +5,7 @@ from app.api.auth import get_current_user
 from app.api.posts import PostCreateRequest, PostListResponse, PostResponse
 from app.core.dependencies import get_db_session
 from app.models.user import User
+from app.services.feed_service import FeedService
 from app.services.post_service import PostService
 
 router = APIRouter(prefix="/user")
@@ -12,6 +13,10 @@ router = APIRouter(prefix="/user")
 
 def _service(db: AsyncSession) -> PostService:
     return PostService(db)
+
+
+def _feed_service(db: AsyncSession) -> FeedService:
+    return FeedService(db)
 
 
 @router.post(
@@ -95,6 +100,45 @@ async def list_favorites(
     db: AsyncSession = Depends(get_db_session),
 ):
     rows, total = await _service(db).list_favorites(
+        user=current_user, page=page, page_size=pageSize
+    )
+    items = [
+        PostResponse(
+            id=post.id,
+            mediaUrls=list(post.media_urls or []),
+            title=post.title,
+            description=post.description,
+            geoLat=post.geo_lat,
+            geoLng=post.geo_lng,
+            interestIds=[interest.id for interest in post.interests],
+            season=post.season,
+            averageRating=(
+                round(float(avg_rating), 2) if avg_rating is not None else None
+            ),
+            createdAt=post.created_at,
+            updatedAt=post.updated_at,
+        )
+        for post, avg_rating in rows
+    ]
+    return PostListResponse(items=items, total=total, page=page, pageSize=pageSize)
+
+
+@router.get(
+    "/feed",
+    response_model=PostListResponse,
+    summary="Персонализированная лента мест",
+    description=(
+        "Лента с учётом весов интересов пользователя, смешанная с популярными, "
+        "нишевыми и случайными карточками из последних постов."
+    ),
+)
+async def user_feed(
+    page: int = Query(default=1, ge=1),
+    pageSize: int = Query(default=20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    rows, total = await _feed_service(db).list_feed(
         user=current_user, page=page, page_size=pageSize
     )
     items = [

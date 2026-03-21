@@ -15,9 +15,10 @@ from app.models.post import Post
 from app.models.user import User
 
 # Веса по взаимодействию с карточкой (постом)
+# Плюс за действие — заметный; пассивный минус по «лишним» интересам — небольшой.
 MIN_INTEREST_WEIGHT = 1
-BONUS_INTEREST_WEIGHT_FAVORITE = 1
-BONUS_INTEREST_WEIGHT_REVIEW = 2
+BONUS_INTEREST_WEIGHT_FAVORITE = 20
+BONUS_INTEREST_WEIGHT_REVIEW = 30
 PASSIVE_INTEREST_WEIGHT_DECAY = 1
 
 PostEngagementSource = Literal["favorite", "review"]
