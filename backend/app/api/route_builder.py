@@ -53,7 +53,7 @@ async def build_route(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    params = body.model_dump(exclude_none=True)
+    params = body.model_dump(exclude_none=True, mode="json")
 
     route = Route(
         author_id=user.id,
@@ -90,7 +90,7 @@ async def get_route_status(
 
     return RouteStatusResponse(
         routeId=route.id,
-        status=str(route.status),
+        status=route.status.value if hasattr(route.status, 'value') else str(route.status),
         title=route.title,
         narrative=route.narrative,
         totalExperiences=route.total_experiences or 0,
@@ -117,7 +117,7 @@ async def get_route_full(
 
     result = {
         "routeId": route.id,
-        "status": str(route.status),
+        "status": route.status.value if hasattr(route.status, 'value') else str(route.status),
         "title": route.title,
         "narrative": route.narrative,
         "params": route.params,
