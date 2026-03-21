@@ -83,9 +83,9 @@ class Settings(BaseSettings):
     GPT_CLIENT_KEY: str | None = Field(
         default=None, description="API-ключ GPT-клиента (опционально для MVP)"
     )
-    GPT_MODEL: str = Field(
-        default="gpt-4o-mini", description="Модель GPT по умолчанию"
-    )
+    GPT_MODEL: str = Field(default="gpt-4o-mini", description="Модель GPT по умолчанию")
+
+    TRAVEL_API_KEY: str = Field(description="API TRAVEL для глобального подбора рейсов")
 
     @property
     def frontend_cors_origins_list(self) -> list[str]:

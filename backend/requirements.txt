@@ -17,3 +17,4 @@ loguru
 slugify
 tenacity
 openai
+requests
