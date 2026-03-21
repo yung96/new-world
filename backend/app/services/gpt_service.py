@@ -143,8 +143,11 @@ class GptService:
         self,
         sys_prompt: str,
         user_prompt: str,
-        response_model: BasePydanticModel,
-    ) -> [BasePydanticModel, int]:
+        response_model: type[BasePydanticModel],
+        *,
+        max_tokens: int = 12226,
+        temperature: float = 0.8,
+    ) -> tuple[BasePydanticModel | None, int]:
         """
         Выполняет запрос к OpenAI с автоматическим парсингом ответа
         в Pydantic-модель.
@@ -166,13 +169,13 @@ class GptService:
                 model=settings.GPT_MODEL,
                 response_format=response_model,
                 messages=messages,
-                max_tokens=12226,
-                temperature=0.8,
+                max_tokens=max_tokens,
+                temperature=temperature,
             ),
             timeout=70,
         )
 
-        return (
-            response.choices[0].message.parsed,
-            response.usage.completion_tokens,
+        usage = (
+            response.usage.completion_tokens if response.usage is not None else 0
         )
+        return (response.choices[0].message.parsed, usage)

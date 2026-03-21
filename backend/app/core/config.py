@@ -93,6 +93,11 @@ class Settings(BaseSettings):
     def frontend_cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.frontend_cors_origins.split(",") if o.strip()]
 
+    @property
+    def api_mount_path(self) -> str:
+        """Префикс монтирования API в URL (документация, HTML-панели). По умолчанию `/api`."""
+        return "/api"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

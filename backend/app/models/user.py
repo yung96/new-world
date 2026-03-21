@@ -60,6 +60,11 @@ class User(Base):
     achievements = relationship(
         "Achievement", secondary=user_achievements, back_populates="users"
     )
+    saved_routes = relationship(
+        "UserSavedRoute",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     # -----------------------------------------------------------------------
     # Place statuses — replaces favorite_posts (via UserPlaceStatus ORM model)
