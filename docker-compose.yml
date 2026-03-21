@@ -64,7 +64,7 @@ services:
       retries: 10
     networks:
       - internal
-#      - shared_proxy
+      - shared_proxy
 volumes:
   pgdata:
   redisdata:
@@ -72,6 +72,5 @@ volumes:
 networks:
   internal:
     driver: bridge
-#  shared_proxy:
-#    name: shared_proxy
-#    external: true
+  shared_proxy:
+    external: true
