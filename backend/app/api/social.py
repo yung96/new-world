@@ -140,6 +140,9 @@ def _friend_request_to_response(item: FriendRequest) -> FriendRequestResponse:
     "/interests",
     response_model=InterestResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Создать интерес",
+    description="Создает новый интерес в общем справочнике интересов.",
+    response_description="Созданный интерес.",
 )
 async def create_interest(
     payload: InterestRequest,
@@ -150,7 +153,13 @@ async def create_interest(
     return _interest_to_response(item)
 
 
-@router.get("/interests", response_model=PaginatedInterestsResponse)
+@router.get(
+    "/interests",
+    response_model=PaginatedInterestsResponse,
+    summary="Список интересов",
+    description="Возвращает пагинированный список всех интересов.",
+    response_description="Список интересов с пагинацией.",
+)
 async def list_interests(
     page: int = Query(default=1, ge=1),
     pageSize: int = Query(default=20, ge=1, le=100),
@@ -165,7 +174,13 @@ async def list_interests(
     )
 
 
-@router.post("/interests/bulk_create", response_model=PaginatedInterestsResponse)
+@router.post(
+    "/interests/bulk_create",
+    response_model=PaginatedInterestsResponse,
+    summary="Добавить интересы пользователю",
+    description="Привязывает набор интересов к текущему пользователю и возвращает его интересы.",
+    response_description="Актуальный список интересов пользователя.",
+)
 async def add_interests(
     interest_ids: list[int] = ...,
     _current_user: User = Depends(get_current_user),
@@ -184,7 +199,13 @@ async def add_interests(
     )
 
 
-@router.post("/interests/generate", response_model=PaginatedInterestsResponse)
+@router.post(
+    "/interests/generate",
+    response_model=PaginatedInterestsResponse,
+    summary="Сгенерировать интересы по тексту",
+    description="Определяет интересы пользователя по свободному тексту и сохраняет их.",
+    response_description="Актуальный список интересов пользователя.",
+)
 async def generate_interests(
     user_data: str = ...,
     _current_user: User = Depends(get_current_user),
@@ -220,6 +241,8 @@ async def generate_interests(
 @router.delete(
     "/interests/{interest_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Удалить интерес",
+    description="Удаляет интерес из справочника.",
 )
 async def delete_interest(
     interest_id: int,
@@ -232,6 +255,9 @@ async def delete_interest(
 @router.post(
     "/users/me/interests/{interest_id}",
     response_model=UserCompactResponse,
+    summary="Добавить интерес текущему пользователю",
+    description="Привязывает интерес к профилю текущего пользователя.",
+    response_description="Краткие данные пользователя после обновления.",
 )
 async def add_interest_to_me(
     interest_id: int,
@@ -247,6 +273,9 @@ async def add_interest_to_me(
 @router.delete(
     "/users/me/interests/{interest_id}",
     response_model=UserCompactResponse,
+    summary="Убрать интерес у текущего пользователя",
+    description="Удаляет привязку интереса у текущего пользователя.",
+    response_description="Краткие данные пользователя после обновления.",
 )
 async def remove_interest_from_me(
     interest_id: int,
@@ -263,6 +292,9 @@ async def remove_interest_from_me(
     "/achievements",
     response_model=AchievementResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Создать достижение",
+    description="Создает новое достижение в справочнике достижений.",
+    response_description="Созданное достижение.",
 )
 async def create_achievement(
     payload: AchievementRequest,
@@ -278,6 +310,9 @@ async def create_achievement(
 @router.get(
     "/achievements",
     response_model=PaginatedAchievementsResponse,
+    summary="Список достижений",
+    description="Возвращает пагинированный список достижений.",
+    response_description="Список достижений с пагинацией.",
 )
 async def list_achievements(
     page: int = Query(default=1, ge=1),
@@ -296,6 +331,8 @@ async def list_achievements(
 @router.delete(
     "/achievements/{achievement_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Удалить достижение",
+    description="Удаляет достижение из справочника.",
 )
 async def delete_achievement(
     achievement_id: int,
@@ -308,6 +345,9 @@ async def delete_achievement(
 @router.post(
     "/users/me/achievements/{achievement_id}",
     response_model=UserCompactResponse,
+    summary="Добавить достижение текущему пользователю",
+    description="Привязывает достижение к текущему пользователю.",
+    response_description="Краткие данные пользователя после обновления.",
 )
 async def add_achievement_to_me(
     achievement_id: int,
@@ -323,6 +363,9 @@ async def add_achievement_to_me(
 @router.delete(
     "/users/me/achievements/{achievement_id}",
     response_model=UserCompactResponse,
+    summary="Убрать достижение у текущего пользователя",
+    description="Удаляет достижение из профиля текущего пользователя.",
+    response_description="Краткие данные пользователя после обновления.",
 )
 async def remove_achievement_from_me(
     achievement_id: int,
@@ -339,6 +382,9 @@ async def remove_achievement_from_me(
     "/friends/requests",
     response_model=FriendRequestResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Отправить заявку в друзья",
+    description="Создает новую заявку в друзья от текущего пользователя.",
+    response_description="Созданная заявка в друзья.",
 )
 async def send_friend_request(
     payload: FriendRequestCreateRequest,
@@ -354,6 +400,9 @@ async def send_friend_request(
 @router.get(
     "/friends/requests/incoming",
     response_model=PaginatedFriendRequestsResponse,
+    summary="Входящие заявки в друзья",
+    description="Возвращает входящие заявки в друзья для текущего пользователя.",
+    response_description="Список входящих заявок с пагинацией.",
 )
 async def list_incoming_friend_requests(
     current_user: User = Depends(get_current_user),
@@ -377,6 +426,9 @@ async def list_incoming_friend_requests(
 @router.post(
     "/friends/requests/{request_id}/accept",
     response_model=FriendRequestResponse,
+    summary="Принять заявку в друзья",
+    description="Переводит входящую заявку в статус accepted.",
+    response_description="Обновленная заявка в друзья.",
 )
 async def accept_friend_request(
     request_id: int,
@@ -390,7 +442,11 @@ async def accept_friend_request(
 
 
 @router.post(
-    "/friends/requests/{request_id}/reject", response_model=FriendRequestResponse
+    "/friends/requests/{request_id}/reject",
+    response_model=FriendRequestResponse,
+    summary="Отклонить заявку в друзья",
+    description="Переводит входящую заявку в статус rejected.",
+    response_description="Обновленная заявка в друзья.",
 )
 async def reject_friend_request(
     request_id: int,
@@ -403,7 +459,12 @@ async def reject_friend_request(
     return _friend_request_to_response(item)
 
 
-@router.delete("/friends/requests/{request_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/friends/requests/{request_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Отменить заявку в друзья",
+    description="Отменяет ранее отправленную заявку в друзья.",
+)
 async def cancel_friend_request(
     request_id: int,
     current_user: User = Depends(get_current_user),
@@ -412,7 +473,13 @@ async def cancel_friend_request(
     await _service(db).cancel_friend_request(user=current_user, request_id=request_id)
 
 
-@router.get("/friends", response_model=PaginatedFriendsResponse)
+@router.get(
+    "/friends",
+    response_model=PaginatedFriendsResponse,
+    summary="Список друзей",
+    description="Возвращает пагинированный список друзей текущего пользователя.",
+    response_description="Список друзей с пагинацией.",
+)
 async def list_friends(
     current_user: User = Depends(get_current_user),
     page: int = Query(default=1, ge=1),
@@ -430,7 +497,12 @@ async def list_friends(
     )
 
 
-@router.delete("/friends/{friend_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/friends/{friend_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Удалить из друзей",
+    description="Удаляет пользователя из списка друзей текущего пользователя.",
+)
 async def delete_friend(
     friend_id: int,
     current_user: User = Depends(get_current_user),
