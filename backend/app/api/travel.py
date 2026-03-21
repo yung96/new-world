@@ -214,7 +214,7 @@ class RouteInfoResponseDTO(BasePydanticModel):
 
 # --- Настройка FastAPI ---
 
-router = APIRouter(prefix="/travel")
+router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/auth",
     description="Построение маршрутов",
