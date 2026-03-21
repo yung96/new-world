@@ -13,7 +13,7 @@ from app.core.dependencies import get_db_session
 from app.models.user import User
 from app.services.ivan_alt_local_route_service import IvanAltLocalRouteService
 
-router = APIRouter(prefix="/ivan-alt")
+router = APIRouter(prefix="/routes")
 
 
 class InterestWeightItem(BasePydanticModel):
@@ -131,7 +131,7 @@ _IVAN_ALT_PANEL_HTML = """
         skipLlm: document.getElementById('skipLlm').checked,
       };
       try {
-        const res = await fetch(API_ROOT + '/ivan-alt/local-routes/generate', {
+        const res = await fetch(API_ROOT + '/routes/local-routes/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
