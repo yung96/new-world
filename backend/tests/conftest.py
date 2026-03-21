@@ -35,11 +35,9 @@ from app.models import Base
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def apply_migrations():
-    alembic_ini = _BASE_DIR / "alembic.ini"
-    config = Config(str(alembic_ini))
-    command.upgrade(config, "head")
     engine = create_async_engine(settings.db_url, echo=False)
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     await engine.dispose()
     yield

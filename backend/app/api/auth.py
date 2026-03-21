@@ -48,7 +48,7 @@ class UserPublicReviewItem(BasePydanticModel):
     id: int = Field(description="Идентификатор отзыва.")
     postId: int = Field(description="Идентификатор карточки места.")
     postTitle: str = Field(description="Название места.")
-    postCity: str = Field(description="Город места.")
+    postRegionId: int | None = Field(description="Идентификатор региона места.")
     rating: int = Field(description="Оценка 1–5.")
     comment: str | None = Field(description="Текст отзыва.")
     mediaUrls: list[str] = Field(description="Медиа отзыва.")
@@ -93,16 +93,12 @@ class AchievementProgressListResponse(BasePydanticModel):
     items: list[AchievementProgressItemResponse]
 
 
-def _city_or_empty(value: str | None) -> str:
-    return (value or "").strip()
-
-
 def _review_to_public_item(review: Review) -> UserPublicReviewItem:
     return UserPublicReviewItem(
         id=review.id,
         postId=review.post_id,
         postTitle=review.post.title,
-        postCity=_city_or_empty(review.post.city),
+        postRegionId=review.post.region_id,
         rating=review.rating,
         comment=review.comment,
         mediaUrls=list(review.media_urls or []),

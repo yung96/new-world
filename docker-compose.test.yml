@@ -42,4 +42,4 @@ services:
       kraeved_test_redis:
         condition: service_healthy
     command: >
-      sh -c "alembic upgrade head && pytest -vv -ra"
+      sh -c "pytest -vv -ra"

@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.associations import user_favorite_posts
+from app.models.associations import UserPlaceStatus
 from app.models.interest import Interest
 from app.models.post import Post, Season
 from app.models.review import Review
@@ -22,11 +22,9 @@ class PostService:
         *,
         author: User,
         title: str,
-        city: str,
         description: str | None,
         geo_lat: float | None,
         geo_lng: float | None,
-        media_urls: list[str],
         season: Season,
         interest_ids: list[int],
     ) -> Post:
@@ -34,11 +32,9 @@ class PostService:
         post = Post(
             author_id=author.id,
             title=title.strip(),
-            city=city,
             description=description,
             geo_lat=geo_lat,
             geo_lng=geo_lng,
-            media_urls=media_urls,
             season=season,
             interests=interests,
         )
@@ -104,7 +100,6 @@ class PostService:
         description: str | None = None,
         geo_lat: float | None = None,
         geo_lng: float | None = None,
-        media_urls: list[str] | None = None,
         season: Season | None = None,
         interest_ids: list[int] | None = None,
     ) -> Post:
@@ -123,8 +118,6 @@ class PostService:
             post.geo_lat = geo_lat
         if geo_lng is not None:
             post.geo_lng = geo_lng
-        if media_urls is not None:
-            post.media_urls = media_urls
         if season is not None:
             post.season = season
         if interest_ids is not None:
@@ -150,11 +143,10 @@ class PostService:
         *,
         post_id: int,
         title: str | None = None,
-        city: str | None = None,
+        region_id: int | None = None,
         description: str | None = None,
         geo_lat: float | None = None,
         geo_lng: float | None = None,
-        media_urls: list[str] | None = None,
         season: Season | None = None,
         interest_ids: list[int] | None = None,
     ) -> Post:
@@ -162,16 +154,14 @@ class PostService:
 
         if title is not None:
             post.title = title.strip()
-        if city is not None:
-            post.city = city
+        if region_id is not None:
+            post.region_id = region_id
         if description is not None:
             post.description = description
         if geo_lat is not None:
             post.geo_lat = geo_lat
         if geo_lng is not None:
             post.geo_lng = geo_lng
-        if media_urls is not None:
-            post.media_urls = media_urls
         if season is not None:
             post.season = season
         if interest_ids is not None:
@@ -249,14 +239,14 @@ class PostService:
 
     async def add_favorite(self, *, user: User, post_id: int) -> None:
         await self.get_post_or_404(post_id)
-        exists_stmt = select(user_favorite_posts.c.user_id).where(
-            user_favorite_posts.c.user_id == user.id,
-            user_favorite_posts.c.post_id == post_id,
+        exists_stmt = select(UserPlaceStatus).where(
+            UserPlaceStatus.user_id == user.id,
+            UserPlaceStatus.post_id == post_id,
         )
         exists = (await self.db.execute(exists_stmt)).first() is not None
         if not exists:
-            await self.db.execute(
-                user_favorite_posts.insert().values(user_id=user.id, post_id=post_id)
+            self.db.add(
+                UserPlaceStatus(user_id=user.id, post_id=post_id, status="want")
             )
             # веса — один раз на пару (user, post): повторный add_favorite не вызывается
             await SocialService(self.db).apply_post_engagement_weights(
@@ -265,13 +255,14 @@ class PostService:
             await self.db.commit()
 
     async def remove_favorite(self, *, user: User, post_id: int) -> None:
-        await self.db.execute(
-            user_favorite_posts.delete().where(
-                user_favorite_posts.c.user_id == user.id,
-                user_favorite_posts.c.post_id == post_id,
-            )
+        existing_stmt = select(UserPlaceStatus).where(
+            UserPlaceStatus.user_id == user.id,
+            UserPlaceStatus.post_id == post_id,
         )
-        await self.db.commit()
+        row = (await self.db.execute(existing_stmt)).scalar_one_or_none()
+        if row is not None:
+            await self.db.delete(row)
+            await self.db.commit()
 
     async def list_favorites(
         self, *, user: User, page: int, page_size: int
@@ -279,8 +270,8 @@ class PostService:
         offset = (page - 1) * page_size
         total_stmt = (
             select(func.count())
-            .select_from(user_favorite_posts)
-            .where(user_favorite_posts.c.user_id == user.id)
+            .select_from(UserPlaceStatus)
+            .where(UserPlaceStatus.user_id == user.id)
         )
         total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
 
@@ -295,9 +286,9 @@ class PostService:
 
         stmt = (
             select(Post, rating_subquery.c.avg_rating)
-            .join(user_favorite_posts, user_favorite_posts.c.post_id == Post.id)
+            .join(UserPlaceStatus, UserPlaceStatus.post_id == Post.id)
             .outerjoin(rating_subquery, rating_subquery.c.post_id == Post.id)
-            .where(user_favorite_posts.c.user_id == user.id)
+            .where(UserPlaceStatus.user_id == user.id)
             .options(selectinload(Post.interests))
             .order_by(Post.created_at.desc(), Post.id.desc())
             .offset(offset)

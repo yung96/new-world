@@ -15,9 +15,8 @@ router = APIRouter()
 
 
 class PostCreateRequest(BasePydanticModel):
-    mediaUrls: list[str] = Field(default_factory=list)
     title: str
-    city: str
+    regionId: int | None = None
     description: str | None = None
     geoLat: float | None = Field(default=None, ge=-90, le=90)
     geoLng: float | None = Field(default=None, ge=-180, le=180)
@@ -26,9 +25,8 @@ class PostCreateRequest(BasePydanticModel):
 
 
 class PostUpdateRequest(BasePydanticModel):
-    mediaUrls: list[str] | None = None
     title: str | None = None
-    city: str | None = None
+    regionId: int | None = None
     description: str | None = None
     geoLat: float | None = Field(default=None, ge=-90, le=90)
     geoLng: float | None = Field(default=None, ge=-180, le=180)
@@ -38,15 +36,24 @@ class PostUpdateRequest(BasePydanticModel):
 
 class PostResponse(BasePydanticModel):
     id: int
-    mediaUrls: list[str]
     title: str
-    city: str
+    regionId: int | None
     description: str | None
     geoLat: float | None
     geoLng: float | None
+    address: str | None
+    phone: str | None
+    email: str | None
+    website: str | None
+    needCar: bool
+    priceLevel: str | None
+    durationHours: float | None
+    bestAngle: str | None
+    verified: bool
     interestIds: list[int]
     season: Season
     averageRating: float | None
+    reviewsCount: int
     createdAt: datetime
     updatedAt: datetime
 
@@ -63,21 +70,28 @@ def _service(db: AsyncSession) -> PostService:
 
 
 def _to_response(post: Post, average_rating: float | None = None) -> PostResponse:
-    # Backward compatibility for legacy rows created before city became required.
-    city = (post.city or "").strip()
     return PostResponse(
         id=post.id,
-        mediaUrls=list(post.media_urls or []),
         title=post.title,
-        city=city,
+        regionId=post.region_id,
         description=post.description,
         geoLat=post.geo_lat,
         geoLng=post.geo_lng,
+        address=post.address,
+        phone=post.phone,
+        email=post.email,
+        website=post.website,
+        needCar=post.need_car,
+        priceLevel=post.price_level,
+        durationHours=post.duration_hours,
+        bestAngle=post.best_angle,
+        verified=post.verified,
         interestIds=[interest.id for interest in post.interests],
         season=post.season,
         averageRating=(
             round(float(average_rating), 2) if average_rating is not None else None
         ),
+        reviewsCount=post.reviews_count,
         createdAt=post.created_at,
         updatedAt=post.updated_at,
     )
@@ -98,11 +112,9 @@ async def create_post(
     created = await _service(db).create_post(
         author=current_user,
         title=payload.title,
-        city=payload.city,
         description=payload.description,
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,
-        media_urls=payload.mediaUrls,
         season=payload.season,
         interest_ids=payload.interestIds,
     )
@@ -152,11 +164,10 @@ async def update_post(
     updated = await _service(db).admin_update_post(
         post_id=post_id,
         title=payload.title,
-        city=payload.city,
+        region_id=payload.regionId,
         description=payload.description,
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,
-        media_urls=payload.mediaUrls,
         season=payload.season,
         interest_ids=payload.interestIds,
     )

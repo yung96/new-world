@@ -7,7 +7,7 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.associations import post_interests, user_favorite_posts, user_interests, user_subscriptions
+from app.models.associations import UserPlaceStatus, post_interests, user_interests, user_subscriptions
 from app.models.post import Post
 from app.models.review import Review
 from app.models.user import User
@@ -181,9 +181,9 @@ class FeedService:
             return {}, {}, {}
 
         fav_stmt = (
-            select(user_favorite_posts.c.post_id, func.count().label("fav_cnt"))
-            .where(user_favorite_posts.c.post_id.in_(candidate_ids))
-            .group_by(user_favorite_posts.c.post_id)
+            select(UserPlaceStatus.post_id, func.count().label("fav_cnt"))
+            .where(UserPlaceStatus.post_id.in_(candidate_ids))
+            .group_by(UserPlaceStatus.post_id)
         )
         fav_rows = (await self.db.execute(fav_stmt)).all()
         fav_map = {int(r.post_id): int(r.fav_cnt) for r in fav_rows}

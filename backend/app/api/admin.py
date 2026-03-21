@@ -21,11 +21,10 @@ router = APIRouter(prefix="/admin")
 
 class AdminPostUpdateRequest(BasePydanticModel):
     title: str | None = None
-    city: str | None = None
+    regionId: int | None = None
     description: str | None = None
     geoLat: float | None = Field(default=None, ge=-90, le=90)
     geoLng: float | None = Field(default=None, ge=-180, le=180)
-    mediaUrls: list[str] | None = None
     season: Season | None = None
     interestIds: list[int] | None = None
 
@@ -887,11 +886,10 @@ async def admin_update_post(
     post = await _post_service(db).admin_update_post(
         post_id=post_id,
         title=payload.title,
-        city=payload.city,
+        region_id=payload.regionId,
         description=payload.description,
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,
-        media_urls=payload.mediaUrls,
         season=payload.season,
         interest_ids=payload.interestIds,
     )

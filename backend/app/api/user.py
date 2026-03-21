@@ -30,23 +30,27 @@ def _swipe_service(db: AsyncSession) -> SwipeService:
     return SwipeService(db)
 
 
-def _city_or_empty(value: str | None) -> str:
-    # Backward compatibility for legacy rows created before city became required.
-    return (value or "").strip()
-
-
 def _to_post_response(post, avg_rating: float | None) -> PostResponse:
     return PostResponse(
         id=post.id,
-        mediaUrls=list(post.media_urls or []),
         title=post.title,
-        city=_city_or_empty(post.city),
+        regionId=post.region_id,
         description=post.description,
         geoLat=post.geo_lat,
         geoLng=post.geo_lng,
+        address=post.address,
+        phone=post.phone,
+        email=post.email,
+        website=post.website,
+        needCar=post.need_car,
+        priceLevel=post.price_level,
+        durationHours=post.duration_hours,
+        bestAngle=post.best_angle,
+        verified=post.verified,
         interestIds=[interest.id for interest in post.interests],
         season=post.season,
         averageRating=(round(float(avg_rating), 2) if avg_rating is not None else None),
+        reviewsCount=post.reviews_count,
         createdAt=post.created_at,
         updatedAt=post.updated_at,
     )
@@ -88,7 +92,7 @@ class SubscriptionActivityItemResponse(BasePydanticModel):
     createdAt: datetime = Field(description="Время публикации отзыва (сортировка ленты по убыванию).")
     author: ReviewAuthorResponse
     postTitle: str = Field(description="Название места.")
-    postCity: str = Field(description="Город места.")
+    postRegionId: int | None = Field(description="Идентификатор региона места.")
 
 
 class SubscriptionActivityListResponse(BasePydanticModel):
@@ -111,7 +115,7 @@ def _to_subscription_activity_item(review: Review) -> SubscriptionActivityItemRe
         createdAt=review.created_at,
         author=ReviewAuthorResponse(id=review.author.id, phone=review.author.phone),
         postTitle=review.post.title,
-        postCity=_city_or_empty(review.post.city),
+        postRegionId=review.post.region_id,
     )
 
 
@@ -131,11 +135,9 @@ async def user_create_post(
     created = await _service(db).create_post(
         author=current_user,
         title=payload.title,
-        city=payload.city,
         description=payload.description,
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,
-        media_urls=payload.mediaUrls,
         season=payload.season,
         interest_ids=payload.interestIds,
     )
@@ -225,7 +227,7 @@ async def user_feed(
         "текущий пользователь (сортировка по `createdAt` у отзыва, новые выше). "
         "Не смешивается с рекомендательной лентой карточек (`GET /user/feed`)."
     ),
-    response_description="Страница отзывов с полями автора и места (postTitle, postCity).",
+    response_description="Страница отзывов с полями автора и места (postTitle, postRegionId).",
 )
 async def subscription_activity_feed(
     page: int = Query(
