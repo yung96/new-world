@@ -56,6 +56,8 @@ async def test_public_profile_followers_count_and_reviews(client):
     prof = await client.get(f"/api/users/{reviewer_id}")
     assert prof.status_code == 200
     data = prof.json()
+    assert "achievements" in data
+    assert isinstance(data["achievements"], list)
     assert data["id"] == reviewer_id
     assert data["followersCount"] == 1
     assert data["total"] >= 1
@@ -90,6 +92,7 @@ async def test_public_profile_reviews_pagination(client):
 
     p1 = await client.get(f"/api/users/{uid}?page=1&pageSize=2")
     assert p1.status_code == 200
+    assert "achievements" in p1.json()
     assert p1.json()["total"] == 3
     assert len(p1.json()["reviews"]) == 2
 

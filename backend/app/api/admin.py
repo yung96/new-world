@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.base_schema import BasePydanticModel
 from app.core.dependencies import get_db_session
+from app.models.achievement import Achievement
 from app.models.associations import user_interests
 from app.models.interest import Interest
 from app.models.post import Post, Season
@@ -88,12 +89,49 @@ class AdminDashboardResponse(BasePydanticModel):
     usersPageSize: int
 
 
+class AdminAchievementCreateRequest(BasePydanticModel):
+    name: str
+    description: str | None = None
+    interestId: int
+    requiredDistinctPosts: int = Field(ge=1)
+
+
+class AdminAchievementCard(BasePydanticModel):
+    id: int
+    name: str
+    description: str | None
+    interestId: int | None
+    interestName: str | None
+    requiredDistinctPosts: int | None
+    createdAt: datetime
+
+
+class PaginatedAdminAchievementsResponse(BasePydanticModel):
+    items: list[AdminAchievementCard]
+    total: int
+    page: int
+    pageSize: int
+
+
 def _post_service(db: AsyncSession) -> PostService:
     return PostService(db)
 
 
 def _social_service(db: AsyncSession) -> SocialService:
     return SocialService(db)
+
+
+def _achievement_to_admin_card(item: Achievement) -> AdminAchievementCard:
+    intr = getattr(item, "interest", None)
+    return AdminAchievementCard(
+        id=item.id,
+        name=item.name,
+        description=item.description,
+        interestId=item.interest_id,
+        interestName=intr.name if intr is not None else None,
+        requiredDistinctPosts=item.required_distinct_posts,
+        createdAt=item.created_at,
+    )
 
 
 @router.get("", response_class=HTMLResponse, include_in_schema=False)
@@ -354,6 +392,19 @@ async def admin_editor_page():
       </div>
 
       <div class="card">
+        <h2>Достижения (правила)</h2>
+        <p class="muted">Интерес + число уникальных карточек с отзывами пользователя.</p>
+        <div class="col-gap" style="margin-bottom: 8px;">
+          <input id="newAchName" placeholder="Название достижения" />
+          <input id="newAchDesc" placeholder="Описание (необязательно)" />
+          <select id="newAchInterestId"></select>
+          <input id="newAchN" type="number" min="1" placeholder="N карточек" value="1" />
+          <button class="primary" onclick="createRuleAchievement()">Создать достижение</button>
+        </div>
+        <div class="list" id="achievementsList"></div>
+      </div>
+
+      <div class="card">
         <h2>Пользователи и их веса интересов</h2>
         <div class="list" id="usersList"></div>
       </div>
@@ -369,6 +420,7 @@ async def admin_editor_page():
     const state = {
       posts: [],
       interests: [],
+      achievements: [],
       users: [],
       selectedPostId: null,
       selectedInterestIds: new Set(),
@@ -458,6 +510,29 @@ async def admin_editor_page():
       `).join('') || '<div class="list-item"><span class="muted">Нет интересов на этой странице.</span></div>';
     }
 
+    function renderAchievementInterestSelect() {
+      const sel = byId('newAchInterestId');
+      sel.innerHTML = (state.interests || []).map((i) =>
+        `<option value="${i.id}">${escapeHtml(i.name)} (#${i.id})</option>`
+      ).join('') || '<option value="">Нет интересов — создай сначала</option>';
+    }
+
+    function renderAchievementsList() {
+      const list = byId('achievementsList');
+      list.innerHTML = (state.achievements || []).map((a) => `
+        <div class="list-item">
+          <div>
+            <strong>#${a.id}</strong> ${escapeHtml(a.name)}
+            <div class="muted">интерес: ${escapeHtml(a.interestName || '-')} · N=${a.requiredDistinctPosts ?? '-'}</div>
+            <div class="muted">${escapeHtml(a.description || '')}</div>
+          </div>
+          <div class="toolbar">
+            <button class="danger" onclick="deleteAchievement(${a.id})">Удалить</button>
+          </div>
+        </div>
+      `).join('') || '<div class="list-item"><span class="muted">Нет достижений.</span></div>';
+    }
+
     function renderUsersList() {
       const list = byId('usersList');
       list.innerHTML = state.users.map((user) => {
@@ -500,6 +575,49 @@ async def admin_editor_page():
       renderInterestChips();
     }
 
+    async function loadAchievements() {
+      const p = await api('/api/admin/achievements?page=1&pageSize=100');
+      state.achievements = p.items || [];
+      renderAchievementsList();
+      renderAchievementInterestSelect();
+    }
+
+    async function createRuleAchievement() {
+      const name = byId('newAchName').value.trim();
+      const description = byId('newAchDesc').value.trim() || null;
+      const interestId = parseInt(byId('newAchInterestId').value, 10);
+      const requiredDistinctPosts = parseInt(byId('newAchN').value, 10);
+      if (!name) { setStatus('Укажи название достижения', false); return; }
+      if (!interestId) { setStatus('Выбери интерес', false); return; }
+      if (!requiredDistinctPosts || requiredDistinctPosts < 1) { setStatus('N должно быть >= 1', false); return; }
+      try {
+        await api('/api/admin/achievements', 'POST', {
+          name,
+          description,
+          interestId,
+          requiredDistinctPosts,
+        });
+        setStatus('Достижение создано');
+        byId('newAchName').value = '';
+        byId('newAchDesc').value = '';
+        await loadAchievements();
+      } catch (e) {
+        setStatus('Ошибка: ' + e.message, false);
+      }
+    }
+
+    async function deleteAchievement(id) {
+      const sure = window.confirm(`Удалить достижение #${id}?`);
+      if (!sure) return;
+      try {
+        await api(`/api/admin/achievements/${id}`, 'DELETE');
+        setStatus(`Достижение #${id} удалено`);
+        await loadAchievements();
+      } catch (e) {
+        setStatus('Ошибка удаления: ' + e.message, false);
+      }
+    }
+
     async function loadDashboard() {
       try {
         const payload = await api('/api/admin/dashboard');
@@ -511,6 +629,11 @@ async def admin_editor_page():
         renderInterestsList();
         renderUsersList();
         renderInterestChips();
+        try {
+          await loadAchievements();
+        } catch (ae) {
+          setStatus('Достижения не загрузились: ' + ae.message, false);
+        }
 
         if (state.posts.length && state.selectedPostId == null) {
           selectPost(state.posts[0].id);
@@ -633,6 +756,8 @@ async def admin_editor_page():
     window.createInterest = createInterest;
     window.renameInterestPrompt = renameInterestPrompt;
     window.deleteInterest = deleteInterest;
+    window.createRuleAchievement = createRuleAchievement;
+    window.deleteAchievement = deleteAchievement;
 
     loadDashboard();
   </script>
@@ -835,4 +960,55 @@ async def admin_delete_interest(
 ):
     """Удаление интереса через admin API."""
     await _social_service(db).delete_interest(interest_id)
+
+
+@router.post(
+    "/achievements",
+    response_model=AdminAchievementCard,
+    status_code=201,
+    summary="Admin: создать достижение (правило)",
+    description="Достижение привязывается к интересу и порогу уникальных карточек с отзывами.",
+)
+async def admin_create_achievement(
+    payload: AdminAchievementCreateRequest,
+    db: AsyncSession = Depends(get_db_session),
+):
+    item = await _social_service(db).create_rule_achievement(
+        name=payload.name,
+        description=payload.description,
+        interest_id=payload.interestId,
+        required_distinct_posts=payload.requiredDistinctPosts,
+    )
+    return _achievement_to_admin_card(item)
+
+
+@router.get(
+    "/achievements",
+    response_model=PaginatedAdminAchievementsResponse,
+    summary="Admin: список достижений",
+)
+async def admin_list_achievements(
+    page: int = Query(default=1, ge=1),
+    pageSize: int = Query(default=50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db_session),
+):
+    items, total = await _social_service(db).list_achievements(page=page, page_size=pageSize)
+    return PaginatedAdminAchievementsResponse(
+        items=[_achievement_to_admin_card(a) for a in items],
+        total=total,
+        page=page,
+        pageSize=pageSize,
+    )
+
+
+@router.delete(
+    "/achievements/{achievement_id}",
+    status_code=204,
+    summary="Admin: удалить достижение",
+)
+async def admin_delete_achievement(
+    achievement_id: int,
+    db: AsyncSession = Depends(get_db_session),
+):
+    await _social_service(db).delete_achievement(achievement_id)
 

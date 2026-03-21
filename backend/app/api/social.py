@@ -34,16 +34,14 @@ class InterestResponse(BasePydanticModel):
     emoji: str
 
 
-class AchievementRequest(BasePydanticModel):
-    name: str
-    description: str | None = None
-
-
 class AchievementResponse(BasePydanticModel):
     id: int
     name: str
     description: str | None
     createdAt: datetime
+    interestId: int | None = None
+    interestName: str | None = None
+    requiredDistinctPosts: int | None = None
 
 
 class PaginatedInterestsResponse(BasePydanticModel):
@@ -102,11 +100,15 @@ def _interest_to_response(item: Interest) -> InterestResponse:
 
 
 def _achievement_to_response(item: Achievement) -> AchievementResponse:
+    intr = getattr(item, "interest", None)
     return AchievementResponse(
         id=item.id,
         name=item.name,
         description=item.description,
         createdAt=item.created_at,
+        interestId=item.interest_id,
+        interestName=intr.name if intr is not None else None,
+        requiredDistinctPosts=item.required_distinct_posts,
     )
 
 
@@ -262,25 +264,6 @@ async def remove_interest_from_me(
     return UserCompactResponse(id=user.id, phone=user.phone)
 
 
-@router.post(
-    "/achievements",
-    response_model=AchievementResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Создать достижение",
-    description="Создает новое достижение в справочнике достижений.",
-    response_description="Созданное достижение.",
-)
-async def create_achievement(
-    payload: AchievementRequest,
-    _current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session),
-):
-    item = await _service(db).create_achievement(
-        name=payload.name, description=payload.description
-    )
-    return _achievement_to_response(item)
-
-
 @router.get(
     "/achievements",
     response_model=PaginatedAchievementsResponse,
@@ -300,56 +283,6 @@ async def list_achievements(
         page=page,
         pageSize=pageSize,
     )
-
-
-@router.delete(
-    "/achievements/{achievement_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Удалить достижение",
-    description="Удаляет достижение из справочника.",
-)
-async def delete_achievement(
-    achievement_id: int,
-    _current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session),
-):
-    await _service(db).delete_achievement(achievement_id)
-
-
-@router.post(
-    "/users/me/achievements/{achievement_id}",
-    response_model=UserCompactResponse,
-    summary="Добавить достижение текущему пользователю",
-    description="Привязывает достижение к текущему пользователю.",
-    response_description="Краткие данные пользователя после обновления.",
-)
-async def add_achievement_to_me(
-    achievement_id: int,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session),
-):
-    user = await _service(db).add_achievement_to_user(
-        user=current_user, achievement_id=achievement_id
-    )
-    return UserCompactResponse(id=user.id, phone=user.phone)
-
-
-@router.delete(
-    "/users/me/achievements/{achievement_id}",
-    response_model=UserCompactResponse,
-    summary="Убрать достижение у текущего пользователя",
-    description="Удаляет достижение из профиля текущего пользователя.",
-    response_description="Краткие данные пользователя после обновления.",
-)
-async def remove_achievement_from_me(
-    achievement_id: int,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session),
-):
-    user = await _service(db).remove_achievement_from_user(
-        user=current_user, achievement_id=achievement_id
-    )
-    return UserCompactResponse(id=user.id, phone=user.phone)
 
 
 @router.post(

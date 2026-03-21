@@ -276,24 +276,48 @@ class SocialService:
                     )
                 )
 
-    async def create_achievement(
-        self, *, name: str, description: str | None
+    async def create_rule_achievement(
+        self,
+        *,
+        name: str,
+        description: str | None,
+        interest_id: int,
+        required_distinct_posts: int,
     ) -> Achievement:
+        if required_distinct_posts < 1:
+            raise HTTPException(
+                status_code=400, detail="required_distinct_posts must be at least 1"
+            )
+        interest = await self.db.get(Interest, interest_id)
+        if interest is None:
+            raise HTTPException(status_code=404, detail="Interest not found")
         normalized = (name or "").strip()
         if not normalized:
             raise HTTPException(status_code=400, detail="Achievement name is required")
-        exists = (
+        dup = (
             await self.db.execute(
                 select(Achievement).where(Achievement.name == normalized)
             )
         ).scalar_one_or_none()
-        if exists is not None:
-            return exists
-        achievement = Achievement(name=normalized, description=description)
+        if dup is not None:
+            raise HTTPException(
+                status_code=409, detail="Achievement with this name already exists"
+            )
+        achievement = Achievement(
+            name=normalized,
+            description=description,
+            interest_id=interest_id,
+            required_distinct_posts=required_distinct_posts,
+        )
         self.db.add(achievement)
         await self.db.commit()
-        await self.db.refresh(achievement)
-        return achievement
+        stmt = (
+            select(Achievement)
+            .options(selectinload(Achievement.interest))
+            .where(Achievement.id == achievement.id)
+        )
+        loaded = (await self.db.execute(stmt)).scalar_one()
+        return loaded
 
     async def list_achievements(
         self, *, page: int, page_size: int
@@ -305,6 +329,7 @@ class SocialService:
         )
         stmt = (
             select(Achievement)
+            .options(selectinload(Achievement.interest))
             .order_by(Achievement.id.asc())
             .offset(offset)
             .limit(page_size)
@@ -318,39 +343,6 @@ class SocialService:
             raise HTTPException(status_code=404, detail="Achievement not found")
         await self.db.delete(achievement)
         await self.db.commit()
-
-    async def add_achievement_to_user(self, *, user: User, achievement_id: int) -> User:
-        achievement = await self.db.get(Achievement, achievement_id)
-        if achievement is None:
-            raise HTTPException(status_code=404, detail="Achievement not found")
-        exists_stmt = select(user_achievements.c.user_id).where(
-            user_achievements.c.user_id == user.id,
-            user_achievements.c.achievement_id == achievement_id,
-        )
-        exists = (await self.db.execute(exists_stmt)).first() is not None
-        if not exists:
-            await self.db.execute(
-                user_achievements.insert().values(
-                    user_id=user.id,
-                    achievement_id=achievement_id,
-                )
-            )
-            await self.db.commit()
-        user = await self.get_user_or_404(user.id)
-        return user
-
-    async def remove_achievement_from_user(
-        self, *, user: User, achievement_id: int
-    ) -> User:
-        await self.db.execute(
-            user_achievements.delete().where(
-                user_achievements.c.user_id == user.id,
-                user_achievements.c.achievement_id == achievement_id,
-            )
-        )
-        await self.db.commit()
-        user = await self.get_user_or_404(user.id)
-        return user
 
     async def subscribe(self, *, subscriber: User, following_id: int) -> None:
         if subscriber.id == following_id:

@@ -29,26 +29,8 @@ async def test_interest_create_bind_unbind_delete_cycle(client):
     assert list_resp.json()["total"] >= 0
 
 
-async def test_achievement_create_bind_unbind_delete_cycle(client):
+async def test_list_achievements_public_ok(client):
     headers, _ = await _auth_headers(client, "+70000000011")
-
-    create_resp = await client.post(
-        "/api/achievements",
-        json={"name": "Покоритель маршрутов", "description": "Прошел 10 маршрутов"},
-        headers=headers,
-    )
-    assert create_resp.status_code == 201
-    achievement_id = create_resp.json()["id"]
-
-    bind_resp = await client.post(f"/api/users/me/achievements/{achievement_id}", headers=headers)
-    assert bind_resp.status_code == 200
-
-    unbind_resp = await client.delete(f"/api/users/me/achievements/{achievement_id}", headers=headers)
-    assert unbind_resp.status_code == 200
-
-    delete_resp = await client.delete(f"/api/achievements/{achievement_id}", headers=headers)
-    assert delete_resp.status_code == 204
-
     list_resp = await client.get("/api/achievements", headers=headers)
     assert list_resp.status_code == 200
     assert list_resp.json()["total"] >= 0
@@ -119,27 +101,20 @@ async def test_bind_unknown_interest_returns_404(client):
     assert resp.status_code == 404
 
 
-async def test_achievement_duplicate_name_returns_same_entity(client):
-    headers, _ = await _auth_headers(client, "+70000000053")
-    r1 = await client.post("/api/achievements", json={"name": "Локальный гид"}, headers=headers)
-    r2 = await client.post("/api/achievements", json={"name": "Локальный гид"}, headers=headers)
-    assert r1.status_code == 201
-    assert r2.status_code == 201
-    assert r1.json()["id"] == r2.json()["id"]
-
-
-async def test_achievement_empty_name_returns_400(client):
-    headers, _ = await _auth_headers(client, "+70000000054")
-    resp = await client.post("/api/achievements", json={"name": " "}, headers=headers)
-    assert resp.status_code == 400
-
-
 async def test_social_lists_pagination(client):
     headers, _ = await _auth_headers(client, "+70000000068")
     for idx in range(3):
         interest_resp = await client.post("/api/interests", json={"name": f"Interest-{idx}"}, headers=headers)
         assert interest_resp.status_code == 201
-        ach_resp = await client.post("/api/achievements", json={"name": f"Ach-{idx}"}, headers=headers)
+        iid = interest_resp.json()["id"]
+        ach_resp = await client.post(
+            "/api/admin/achievements",
+            json={
+                "name": f"Ach-{idx}",
+                "interestId": iid,
+                "requiredDistinctPosts": 1,
+            },
+        )
         assert ach_resp.status_code == 201
 
     i_page1 = await client.get("/api/interests?page=1&pageSize=2", headers=headers)

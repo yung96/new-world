@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.models.post import Post
 from app.models.review import Review
 from app.models.user import User
+from app.services.achievement_progress_service import AchievementProgressService
 from app.services.social_service import SocialService
 
 
@@ -47,6 +48,10 @@ class ReviewService:
             await SocialService(self.db).apply_post_engagement_weights(
                 user=author, post_id=post_id, source="review"
             )
+        await self.db.flush()
+        await AchievementProgressService(self.db).evaluate_and_grant_after_review(
+            user_id=author.id, post_id=post_id
+        )
         await self.db.commit()
         await self.db.refresh(review)
         return await self.get_review_or_404(review.id)

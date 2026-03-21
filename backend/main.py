@@ -17,7 +17,8 @@ OPENAPI_TAGS = [
         "name": "Auth & Users",
         "description": (
             "Авторизация по телефону (`POST /api/auth`), профиль «я» (`GET /api/users/me`), "
-            "публичный профиль пользователя (`GET /api/users/{user_id}` — подписчики и отзывы)."
+            "прогресс достижений (`GET /api/users/me/achievements/progress`), "
+            "публичный профиль (`GET /api/users/{user_id}` — подписчики, отзывы, полученные достижения)."
         ),
     },
     {

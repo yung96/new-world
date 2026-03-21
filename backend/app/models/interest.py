@@ -14,3 +14,4 @@ class Interest(Base):
 
     users = relationship("User", secondary=user_interests, back_populates="interests")
     posts = relationship("Post", secondary=post_interests, back_populates="interests")
+    achievements = relationship("Achievement", back_populates="interest")
