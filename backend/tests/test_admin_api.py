@@ -46,7 +46,7 @@ async def test_admin_can_edit_post_and_interest_set(client):
         "/api/admin/interests",
         json={"name": "Новый интерес"},
     )
-    assert create_interest2.status_code == 200
+    assert create_interest2.status_code == 201
     new_interest_id = create_interest2.json()["id"]
 
     patch_resp = await client.patch(
