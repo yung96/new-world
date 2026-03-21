@@ -92,6 +92,19 @@ def get_travel_service() -> TravelService:
 
 # --- Роуты ---
 @router.get(
+    "/cities",
+    response_model=list[str],
+    status_code=status.HTTP_200_OK,
+    summary="Доступный список городов",
+    description="Доступный список городов",
+)
+async def get_available_cities(
+    service: TravelService = Depends(get_travel_service),
+):
+    return service.get_available_cities()
+
+
+@router.get(
     "/global",
     response_model=CheapFlightsResponseDTO,
     status_code=status.HTTP_200_OK,
