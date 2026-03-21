@@ -11,7 +11,7 @@ from app.api.auth import get_current_user
 from app.core.dependencies import get_db_session
 from app.models.route import Route, RouteSegment, SegmentItem
 from app.models.user import User
-from app.services.route_builder import RouteBuilder
+from app.services.pipeline import RouteBuilder
 
 router = APIRouter(prefix="/routes")
 

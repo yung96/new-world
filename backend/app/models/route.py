@@ -25,8 +25,10 @@ from app.models import Base
 class RouteStatus(str, enum.Enum):
     draft = "draft"
     scoring = "scoring"
+    flights = "flights"
     distances = "distances"
     enriching = "enriching"
+    events = "events"
     weather = "weather"
     narrating = "narrating"
     ready = "ready"
