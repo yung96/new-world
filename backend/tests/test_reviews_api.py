@@ -12,9 +12,7 @@ async def _create_post(client, headers: dict[str, str]) -> int:
     resp = await client.post(
         "/api/posts",
         json={
-            "mediaUrls": [],
             "title": "Пост под отзыв",
-            "city": "Москва",
             "description": None,
             "geoLat": None,
             "geoLng": None,
@@ -116,10 +114,11 @@ async def test_review_delete_by_non_author_returns_403(client):
 
 async def test_reviews_pagination(client):
     author_headers = await _auth_headers(client, "+70000000047")
-    reviewer_headers = await _auth_headers(client, "+70000000048")
     post_id = await _create_post(client, author_headers)
 
-    for i in range(3):
+    reviewer_phones = ["+70000000048", "+70000000049", "+70000000050"]
+    for i, phone in enumerate(reviewer_phones):
+        reviewer_headers = await _auth_headers(client, phone)
         resp = await client.post(
             f"/api/posts/{post_id}/reviews",
             json={"rating": 5, "comment": f"c{i}", "mediaUrls": []},

@@ -15,9 +15,7 @@ async def _create_post(client, headers: dict[str, str], *, title: str = "Мес�
     resp = await client.post(
         "/api/posts",
         json={
-            "mediaUrls": [],
             "title": title,
-            "city": "Самара",
             "description": None,
             "geoLat": None,
             "geoLng": None,

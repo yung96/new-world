@@ -17,9 +17,7 @@ async def _create_post_with_interest(
     resp = await client.post(
         "/api/posts",
         json={
-            "mediaUrls": [],
             "title": title,
-            "city": "Тверь",
             "description": None,
             "geoLat": None,
             "geoLng": None,

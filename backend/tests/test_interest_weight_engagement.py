@@ -35,11 +35,9 @@ async def test_favorite_boosts_post_interests_and_decays_others(db_session):
     post = await posts.create_post(
         author=author,
         title="Место",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.summer,
         interest_ids=[interest_a.id],
     )
@@ -66,11 +64,9 @@ async def test_favorite_idempotent_second_call_does_not_change_weights(db_sessio
     post = await posts.create_post(
         author=author,
         title="Пост",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.summer,
         interest_ids=[interest_a.id],
     )
@@ -104,11 +100,9 @@ async def test_review_applies_review_bonus_and_decay(db_session):
     post = await posts.create_post(
         author=author,
         title="Отзывное место",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.winter,
         interest_ids=[interest_a.id],
     )
@@ -142,11 +136,9 @@ async def test_review_second_on_same_post_does_not_change_weights(db_session):
     post = await posts.create_post(
         author=author,
         title="Два отзыва",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.summer,
         interest_ids=[interest_a.id],
     )
@@ -186,11 +178,9 @@ async def test_engagement_adds_missing_post_interest_to_user_with_boost(db_sessi
     post = await posts.create_post(
         author=author,
         title="Только А",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.spring,
         interest_ids=[interest_a.id],
     )
@@ -223,11 +213,9 @@ async def test_post_without_interests_only_passive_decay(db_session):
     post = await posts.create_post(
         author=author,
         title="Без тегов",
-        city="Москва",
         description=None,
         geo_lat=None,
         geo_lng=None,
-        media_urls=[],
         season=Season.autumn,
         interest_ids=[],
     )
