@@ -38,6 +38,10 @@ OPENAPI_TAGS = [
         "description": "Обычные пользовательские endpoint-ы (создание мест, избранное).",
     },
     {
+        "name": "Travel",
+        "description": "Роуты для работы с формированием маршрутов",
+    },
+    {
         "name": "Admin",
         "description": "Обезличенные admin endpoint-ы для MVP (дашборд и управление сущностями).",
     },

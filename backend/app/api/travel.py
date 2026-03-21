@@ -1,6 +1,8 @@
+import math
+from datetime import datetime, timezone
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from fastapi.security import OAuth2PasswordBearer
 
 from pydantic import Field
@@ -80,6 +82,10 @@ class RequestPoint(BasePydanticModel):
     lon: float = Field(examples=[39.96])
 
 
+def now_rfc3339() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
 class RouteInfoRequestDTO(BasePydanticModel):
     points: list[RequestPoint] = Field(
         ...,
@@ -113,20 +119,95 @@ class RouteInfoRequestDTO(BasePydanticModel):
         "motorcycle",
         "public_transport",
     ] = "driving"
-    start_time: Optional[str] = None
+    start_time: str = Field(
+        default_factory=now_rfc3339,
+        description="Дата и время начала движения в формате RFC 3339",
+        examples=["2020-05-15T15:52:01Z"],
+    )
+
+
+class RouteInfoWithPOIRequestDTO(BasePydanticModel):
+    points: list[RequestPoint] = Field(
+        ...,
+        description="Список координат точек маршрута",
+        examples=[
+            [
+                {"lat": 37.793782, "lon": 44.681283},
+            ]
+        ],
+    )
+    interval: int = Field(..., description="Интервал (км)", examples=[200])
+    radius: int = Field(..., description="Радиус (м)", examples=[500])
+    user_prefs: list[str] = Field(
+        ...,
+        description="Предпочтения пользователя",
+        examples=[
+            ["кафе"],
+            ["гостиница"],
+            ["заправка"],
+        ],
+    )
+    limit: int = Field(
+        ..., description="Лимит промежуточных точек на одно предпочтение"
+    )
+
+
+class POIItem(BasePydanticModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+
+
+class WikipediaItem(BasePydanticModel):
+    title: str
+    text: Optional[str] = None
+    photo: Optional[str] = None
+    original: Optional[str] = None
+
+
+class Waypoint(BasePydanticModel):
+    stop: int
+    km: float
+    coords: list[float]
+
+    address: Optional[str] = None
+
+    # ключи: "кафе", "гостиница" и т.д.
+    # значения всегда список (даже если пустой)
+    poi: dict[str, list[POIItem]]
+
+    # может быть пустым списком
+    wikipedia: list[WikipediaItem]
+
+
+class RouteFullInfoResponseDTO(BasePydanticModel):
+    waypoints: list[Waypoint]
 
 
 class RouteInfoPointDTO(BasePydanticModel):
     source_id: int
     target_id: int
+
     distance: int  # метры
+    distance_km: float  # километры
+
     duration: int  # секунды
+    duration_minutes: float  # минуты
+    duration_hours: float  # часы
+
     reliability: Optional[float] = None
 
 
 class RouteInfoResponseDTO(BasePydanticModel):
-    status: str
+    status: str = Field(description="Статус ответа")
     routes: list[RouteInfoPointDTO]
+    total_distance: int = Field(description="Суммарная дистанция (в метрах)")
+    total_distance_km: float = Field(description="Суммарная дистанция (в км)")
+    total_duration_minutes: float = Field(
+        description="Суммарно затрачиваемое время (в минутах)"
+    )
+    total_duration_hours: float = Field(
+        description="Суммарно затрачиваемое время (в часах)"
+    )
 
 
 # --- Настройка FastAPI ---
@@ -174,26 +255,71 @@ async def get_global_route(
 
 
 @router.post(
-    "/route_info",
+    "/route_matrix_info",
     response_model=RouteInfoResponseDTO,
     status_code=status.HTTP_200_OK,
     summary="Получение информации о расстоянии и времени в пути между точками",
     description="Запрос вернет длину маршрута в метрах (distance) "
     "и время в пути в секундах (duration) для каждой пары точек отправления-прибытия",
 )
-async def get_route_info(
+async def get_route_matrix_info(
     data: RouteInfoRequestDTO,
     service: TravelService = Depends(get_travel_service),
 ):
-    payload = await service.get_route_info(data.model_dump(exclude_none=True))
+    payload = await service.get_route_matrix_info(data.model_dump(exclude_none=True))
     routes = [
         RouteInfoPointDTO(
             source_id=item["source_id"],
             target_id=item["target_id"],
             distance=item["distance"],
+            distance_km=round(item["distance"] / 1000, 2),
             duration=item["duration"],
+            duration_minutes=math.ceil(item["duration"] / 60),
+            duration_hours=math.ceil(item["duration"] / 3600),
             reliability=item.get("reliability"),
         )
         for item in payload.get("routes", [])
     ]
-    return RouteInfoResponseDTO(status="OK", routes=routes)
+    total_distance = sum(r.distance for r in routes)
+    total_distance_km = round(total_distance / 1000, 2)
+    total_duration_seconds = sum(r.duration for r in routes)
+    total_duration_minutes = math.ceil(total_duration_seconds / 60)
+    total_duration_hours = math.ceil(total_duration_seconds / 3600)
+    return RouteInfoResponseDTO(
+        status="OK",
+        routes=routes,
+        total_distance=total_distance,
+        total_distance_km=total_distance_km,
+        total_duration_minutes=total_duration_minutes,
+        total_duration_hours=total_duration_hours,
+    )
+
+
+@router.post(
+    "/route_full_info",
+    response_model=RouteFullInfoResponseDTO,
+    status_code=status.HTTP_200_OK,
+    summary="Построение POI точек",
+    description="Построение POI точек",
+)
+async def get_route_full_info(
+    data: RouteInfoWithPOIRequestDTO,
+    service: TravelService = Depends(get_travel_service),
+):
+    payload = await service.get_route_full_info(data.model_dump(exclude_none=True))
+    return RouteFullInfoResponseDTO(**payload)
+
+
+@router.get(
+    "/weather_info",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Получение информации о погоде зная широту и долготу",
+    description="Возвращает информацию о погоде",
+)
+async def get_weather_info(
+    lat: float = Query(description="Широта"),
+    lon: float = Query(description="Долгота"),
+    service: TravelService = Depends(get_travel_service),
+):
+    return await service.get_weather_info(lat=lat, lon=lon)

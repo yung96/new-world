@@ -87,6 +87,7 @@ class Settings(BaseSettings):
 
     TRAVEL_API_KEY: str = Field(description="API TRAVEL для глобального подбора рейсов")
     TGIS_API_KEY: str = Field(description="API 2GIS")
+    DADATA_API_KEY: str = Field(description="API DaData")
 
     @property
     def frontend_cors_origins_list(self) -> list[str]:
