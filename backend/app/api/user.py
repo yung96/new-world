@@ -19,6 +19,11 @@ def _feed_service(db: AsyncSession) -> FeedService:
     return FeedService(db)
 
 
+def _city_or_empty(value: str | None) -> str:
+    # Backward compatibility for legacy rows created before city became required.
+    return (value or "").strip()
+
+
 @router.post(
     "/posts",
     response_model=PostResponse,
@@ -48,7 +53,7 @@ async def user_create_post(
         id=post.id,
         mediaUrls=list(post.media_urls or []),
         title=post.title,
-        city=post.city,
+        city=_city_or_empty(post.city),
         description=post.description,
         geoLat=post.geo_lat,
         geoLng=post.geo_lng,
@@ -109,7 +114,7 @@ async def list_favorites(
             id=post.id,
             mediaUrls=list(post.media_urls or []),
             title=post.title,
-            city=post.city,
+            city=_city_or_empty(post.city),
             description=post.description,
             geoLat=post.geo_lat,
             geoLng=post.geo_lng,
@@ -149,6 +154,7 @@ async def user_feed(
             id=post.id,
             mediaUrls=list(post.media_urls or []),
             title=post.title,
+            city=_city_or_empty(post.city),
             description=post.description,
             geoLat=post.geo_lat,
             geoLng=post.geo_lng,

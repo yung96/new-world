@@ -63,11 +63,13 @@ def _service(db: AsyncSession) -> PostService:
 
 
 def _to_response(post: Post, average_rating: float | None = None) -> PostResponse:
+    # Backward compatibility for legacy rows created before city became required.
+    city = (post.city or "").strip()
     return PostResponse(
         id=post.id,
         mediaUrls=list(post.media_urls or []),
         title=post.title,
-        city=post.city,
+        city=city,
         description=post.description,
         geoLat=post.geo_lat,
         geoLng=post.geo_lng,
