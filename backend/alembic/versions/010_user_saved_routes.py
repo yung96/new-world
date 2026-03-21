@@ -1,7 +1,7 @@
 """user saved routes (chain of posts)
 
 Revision ID: 010
-Revises: 009
+Revises: 74da7452b067
 Create Date: 2026-03-21 18:00:00.000000
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "010"
-down_revision: Union[str, Sequence[str], None] = "009"
+down_revision: Union[str, Sequence[str], None] = "74da7452b067"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
