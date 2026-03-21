@@ -22,6 +22,7 @@ class PostService:
         *,
         author: User,
         title: str,
+        city: str,
         description: str | None,
         geo_lat: float | None,
         geo_lng: float | None,
@@ -33,6 +34,7 @@ class PostService:
         post = Post(
             author_id=author.id,
             title=title.strip(),
+            city=city,
             description=description,
             geo_lat=geo_lat,
             geo_lng=geo_lng,
@@ -45,7 +47,9 @@ class PostService:
         await self.db.refresh(post)
         return post
 
-    async def list_posts(self, *, page: int, page_size: int) -> tuple[list[tuple[Post, float | None]], int]:
+    async def list_posts(
+        self, *, page: int, page_size: int
+    ) -> tuple[list[tuple[Post, float | None]], int]:
         offset = (page - 1) * page_size
         total_stmt = select(func.count(Post.id))
         total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
@@ -106,7 +110,10 @@ class PostService:
     ) -> Post:
         post, _ = await self.get_post_or_404(post_id)
         if post.author_id != actor.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only author can update post")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only author can update post",
+            )
 
         if title is not None:
             post.title = title.strip()
@@ -131,7 +138,10 @@ class PostService:
     async def delete_post(self, *, actor: User, post_id: int) -> None:
         post, _ = await self.get_post_or_404(post_id)
         if post.author_id != actor.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only author can delete post")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only author can delete post",
+            )
         await self.db.delete(post)
         await self.db.commit()
 
@@ -140,6 +150,7 @@ class PostService:
         *,
         post_id: int,
         title: str | None = None,
+        city: str | None = None,
         description: str | None = None,
         geo_lat: float | None = None,
         geo_lng: float | None = None,
@@ -151,6 +162,8 @@ class PostService:
 
         if title is not None:
             post.title = title.strip()
+        if city is not None:
+            post.city = city
         if description is not None:
             post.description = description
         if geo_lat is not None:
@@ -192,10 +205,15 @@ class PostService:
         updated_post, _ = await self.get_post_or_404(post.id)
         return updated_post
 
-    async def add_interest(self, *, actor: User, post_id: int, interest_id: int) -> Post:
+    async def add_interest(
+        self, *, actor: User, post_id: int, interest_id: int
+    ) -> Post:
         post, _ = await self.get_post_or_404(post_id)
         if post.author_id != actor.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only author can edit interests")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only author can edit interests",
+            )
         interest = await self.db.get(Interest, interest_id)
         if interest is None:
             raise HTTPException(status_code=404, detail="Interest not found")
@@ -205,10 +223,15 @@ class PostService:
         updated_post, _ = await self.get_post_or_404(post.id)
         return updated_post
 
-    async def remove_interest(self, *, actor: User, post_id: int, interest_id: int) -> Post:
+    async def remove_interest(
+        self, *, actor: User, post_id: int, interest_id: int
+    ) -> Post:
         post, _ = await self.get_post_or_404(post_id)
         if post.author_id != actor.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only author can edit interests")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only author can edit interests",
+            )
         post.interests = [i for i in post.interests if i.id != interest_id]
         await self.db.commit()
         updated_post, _ = await self.get_post_or_404(post.id)
@@ -254,8 +277,10 @@ class PostService:
         self, *, user: User, page: int, page_size: int
     ) -> tuple[list[tuple[Post, float | None]], int]:
         offset = (page - 1) * page_size
-        total_stmt = select(func.count()).select_from(user_favorite_posts).where(
-            user_favorite_posts.c.user_id == user.id
+        total_stmt = (
+            select(func.count())
+            .select_from(user_favorite_posts)
+            .where(user_favorite_posts.c.user_id == user.id)
         )
         total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
 

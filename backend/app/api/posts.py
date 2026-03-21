@@ -17,6 +17,7 @@ router = APIRouter()
 class PostCreateRequest(BasePydanticModel):
     mediaUrls: list[str] = Field(default_factory=list)
     title: str
+    city: str
     description: str | None = None
     geoLat: float | None = Field(default=None, ge=-90, le=90)
     geoLng: float | None = Field(default=None, ge=-180, le=180)
@@ -27,6 +28,7 @@ class PostCreateRequest(BasePydanticModel):
 class PostUpdateRequest(BasePydanticModel):
     mediaUrls: list[str] | None = None
     title: str | None = None
+    city: str | None = None
     description: str | None = None
     geoLat: float | None = Field(default=None, ge=-90, le=90)
     geoLng: float | None = Field(default=None, ge=-180, le=180)
@@ -38,6 +40,7 @@ class PostResponse(BasePydanticModel):
     id: int
     mediaUrls: list[str]
     title: str
+    city: str
     description: str | None
     geoLat: float | None
     geoLng: float | None
@@ -64,6 +67,7 @@ def _to_response(post: Post, average_rating: float | None = None) -> PostRespons
         id=post.id,
         mediaUrls=list(post.media_urls or []),
         title=post.title,
+        city=post.city,
         description=post.description,
         geoLat=post.geo_lat,
         geoLng=post.geo_lng,
@@ -92,6 +96,7 @@ async def create_post(
     created = await _service(db).create_post(
         author=current_user,
         title=payload.title,
+        city=payload.city,
         description=payload.description,
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,
@@ -145,6 +150,7 @@ async def update_post(
     updated = await _service(db).admin_update_post(
         post_id=post_id,
         title=payload.title,
+        city=payload.city,
         description=payload.description,
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,

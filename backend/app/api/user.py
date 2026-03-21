@@ -35,6 +35,7 @@ async def user_create_post(
     created = await _service(db).create_post(
         author=current_user,
         title=payload.title,
+        city=payload.city,
         description=payload.description,
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,
@@ -47,6 +48,7 @@ async def user_create_post(
         id=post.id,
         mediaUrls=list(post.media_urls or []),
         title=post.title,
+        city=post.city,
         description=post.description,
         geoLat=post.geo_lat,
         geoLng=post.geo_lng,
@@ -107,6 +109,7 @@ async def list_favorites(
             id=post.id,
             mediaUrls=list(post.media_urls or []),
             title=post.title,
+            city=post.city,
             description=post.description,
             geoLat=post.geo_lat,
             geoLng=post.geo_lng,
