@@ -51,8 +51,8 @@ class Post(Base):
 
     author = relationship("User", foreign_keys=[author_id], back_populates="posts")
     partner = relationship("User", foreign_keys=[partner_id])
-    reviews = relationship("Review", back_populates="post", cascade="all, delete-orphan")
-    media = relationship("PostMedia", back_populates="post", cascade="all, delete-orphan", order_by="PostMedia.position")
-    schedule = relationship("PlaceSchedule", back_populates="post", cascade="all, delete-orphan")
-    schedule_overrides = relationship("PlaceScheduleOverride", back_populates="post", cascade="all, delete-orphan")
-    interests = relationship("Interest", secondary=post_interests, back_populates="posts")
+    reviews = relationship("Review", back_populates="post", cascade="all, delete-orphan", lazy="selectin")
+    media = relationship("PostMedia", back_populates="post", cascade="all, delete-orphan", order_by="PostMedia.position", lazy="selectin")
+    schedule = relationship("PlaceSchedule", back_populates="post", cascade="all, delete-orphan", lazy="selectin")
+    schedule_overrides = relationship("PlaceScheduleOverride", back_populates="post", cascade="all, delete-orphan", lazy="selectin")
+    interests = relationship("Interest", secondary=post_interests, back_populates="posts", lazy="selectin")

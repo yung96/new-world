@@ -50,7 +50,7 @@ class User(Base):
     # Interests — many-to-many via secondary Table (user_interests)
     # -----------------------------------------------------------------------
     interests = relationship(
-        "Interest", secondary=user_interests, back_populates="users"
+        "Interest", secondary=user_interests, back_populates="users", lazy="selectin"
     )
 
     # -----------------------------------------------------------------------
@@ -64,6 +64,7 @@ class User(Base):
         "UserSavedRoute",
         back_populates="user",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
     # -----------------------------------------------------------------------

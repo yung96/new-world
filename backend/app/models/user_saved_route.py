@@ -27,6 +27,7 @@ class UserSavedRoute(Base):
         back_populates="route",
         order_by="UserSavedRouteItem.position",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
 
