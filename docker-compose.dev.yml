@@ -1,3 +1,6 @@
+# DEV ONLY — volume mount + hot reload + safe migrations
+# Usage: docker compose -f docker-compose.dev.yml up -d
+
 services:
   kraeved_postgres:
     image: postgres:15
@@ -6,7 +9,7 @@ services:
     env_file:
       - ./backend/.env
     ports:
-        - "15432:5432"
+      - "15432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -33,7 +36,6 @@ services:
     networks:
       - internal
 
-
   kraeved_api:
     build:
       context: ./backend
@@ -45,13 +47,14 @@ services:
     ports:
       - "18000:8000"
     volumes:
+      - ./backend:/app
       - ./backend/uploads:/app/uploads
     depends_on:
       kraeved_postgres:
         condition: service_healthy
       kraeved_redis:
         condition: service_healthy
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     healthcheck:
       test:
         [
@@ -60,11 +63,11 @@ services:
         ]
       interval: 5s
       timeout: 5s
-      start_period: 10s
+      start_period: 15s
       retries: 10
     networks:
       - internal
-      - shared_proxy
+
 volumes:
   pgdata:
   redisdata:
@@ -72,6 +75,3 @@ volumes:
 networks:
   internal:
     driver: bridge
-  shared_proxy:
-    name: shared_proxy
-    external: true
