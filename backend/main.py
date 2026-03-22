@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from app.core.lifespan import lifespan
 from app.core.dependencies import get_db_session
-from app.api import admin, auth, filters, ivan_alt_local_routes, posts, reviews, route_builder, social, uploads, user, travel
+from app.api import admin, auth, filters, ivan_alt_local_routes, posts, reviews, route_builder, social, trips, uploads, user, travel
 
 OPENAPI_TAGS = [
     {
@@ -205,6 +205,7 @@ api_router.include_router(travel.router, tags=["Travel"])
 api_router.include_router(filters.router, tags=["Filters"])
 api_router.include_router(ivan_alt_local_routes.router, tags=["Routes"])
 api_router.include_router(route_builder.router, tags=["Route Builder"])
+api_router.include_router(trips.router, tags=["Trips"])
 api_router.include_router(admin.router, tags=["Admin"])
 fastapi_app.include_router(api_router)
 
