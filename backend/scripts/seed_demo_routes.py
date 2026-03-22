@@ -133,7 +133,7 @@ def create_route_with_segments(
             parent_id=None,
             type="day",
             position=0,
-            details=json.dumps({"label": day_def["title"]}),
+            details=({"label": day_def["title"]}),
         )
         session.add(day_item)
         session.flush()  # get day_item.id
@@ -153,7 +153,7 @@ def create_route_with_segments(
                 parent_id=day_item.id,
                 type="experience",
                 position=exp_index + 1,
-                details=json.dumps(details),
+                details=(details),
             )
             session.add(exp_item)
 
