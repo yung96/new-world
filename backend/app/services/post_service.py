@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -32,6 +32,11 @@ class PostService:
         interest_ids: list[int],
         region_id: int | None = None,
         photo_urls: list[str] | None = None,
+        address: str | None = None,
+        phone: str | None = None,
+        website: str | None = None,
+        need_car: bool = False,
+        verified: bool = False,
     ) -> Post:
         interests = await self._load_interests(interest_ids)
         validated_photos = validate_and_normalize_post_photos(photo_urls)
@@ -44,6 +49,11 @@ class PostService:
             geo_lng=geo_lng,
             season=season,
             region_id=region_id,
+            address=address.strip() if address else None,
+            phone=phone.strip() if phone else None,
+            website=website.strip() if website else None,
+            need_car=need_car,
+            verified=verified,
             interests=interests,
         )
         self.db.add(post)
@@ -187,6 +197,12 @@ class PostService:
         geo_lng: float | None = None,
         season: Season | None = None,
         interest_ids: list[int] | None = None,
+        photo_urls: list[str] | None = None,
+        address: str | None = None,
+        phone: str | None = None,
+        website: str | None = None,
+        need_car: bool | None = None,
+        verified: bool | None = None,
     ) -> Post:
         post, _ = await self.get_post_or_404(post_id)
 
@@ -206,6 +222,23 @@ class PostService:
             post.season = season
         if interest_ids is not None:
             post.interests = await self._load_interests(interest_ids)
+        if address is not None:
+            post.address = address.strip() if address else None
+        if phone is not None:
+            post.phone = phone.strip() if phone else None
+        if website is not None:
+            post.website = website.strip() if website else None
+        if need_car is not None:
+            post.need_car = need_car
+        if verified is not None:
+            post.verified = verified
+
+        if photo_urls is not None:
+            validated = validate_and_normalize_post_photos(photo_urls)
+            await self.db.execute(delete(PostMedia).where(PostMedia.post_id == post_id))
+            await self.db.flush()
+            for position, url in enumerate(validated):
+                self.db.add(PostMedia(post_id=post_id, url=url, position=position))
 
         await self.db.commit()
         await self.db.refresh(post)

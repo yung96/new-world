@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import HTMLResponse
 from pydantic import Field
 from sqlalchemy import func, select
@@ -22,11 +22,46 @@ router = APIRouter(prefix="/admin")
 class AdminPostUpdateRequest(BasePydanticModel):
     title: str | None = None
     regionId: int | None = None
+    city: str | None = None
     description: str | None = None
     geoLat: float | None = Field(default=None, ge=-90, le=90)
     geoLng: float | None = Field(default=None, ge=-180, le=180)
     season: Season | None = None
     interestIds: list[int] | None = None
+    photos: list[str] | None = Field(
+        default=None,
+        description="Если передано — полностью заменить галерею (URL после /api/upload).",
+    )
+    address: str | None = None
+    phone: str | None = None
+    website: str | None = None
+    needCar: bool | None = None
+    verified: bool | None = None
+
+
+class AdminPostCreateRequest(BasePydanticModel):
+    title: str
+    description: str | None = None
+    city: str | None = None
+    regionId: int | None = None
+    geoLat: float | None = Field(default=None, ge=-90, le=90)
+    geoLng: float | None = Field(default=None, ge=-180, le=180)
+    season: Season = Season.spring
+    interestIds: list[int] = Field(default_factory=list)
+    photos: list[str] = Field(
+        default_factory=list,
+        max_length=20,
+        description="URL файлов после POST /api/upload (пути /api/uploads/...).",
+    )
+    authorUserId: int | None = Field(
+        default=None,
+        description="Автор поста; если не задан — пользователь с минимальным id.",
+    )
+    address: str | None = None
+    phone: str | None = None
+    website: str | None = None
+    needCar: bool = False
+    verified: bool = False
 
 
 class AdminInterestUpdateRequest(BasePydanticModel):
@@ -118,6 +153,22 @@ def _post_service(db: AsyncSession) -> PostService:
 
 def _social_service(db: AsyncSession) -> SocialService:
     return SocialService(db)
+
+
+async def _resolve_admin_author(db: AsyncSession, author_user_id: int | None) -> User:
+    if author_user_id is not None:
+        user = await db.get(User, author_user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="Author user not found")
+        return user
+    res = await db.execute(select(User).order_by(User.id.asc()).limit(1))
+    user = res.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No users in database; register a user first or pass authorUserId.",
+        )
+    return user
 
 
 def _achievement_to_admin_card(item: Achievement) -> AdminAchievementCard:
@@ -334,6 +385,44 @@ async def admin_editor_page():
       </div>
 
       <div class="card">
+        <h2>Новое место</h2>
+        <p class="muted">Фото: выберите файлы — они уйдут на <code>/api/upload</code>, URL подставятся в галерею.</p>
+        <div class="col-gap" style="margin-top: 8px;">
+          <input type="file" id="newPostFiles" accept="image/*" multiple onchange="uploadNewPlaceFiles(this)" />
+          <div id="newPlacePhotoList" class="muted" style="font-size: 12px;"></div>
+          <select id="newPostAuthorId"><option value="">Автор: первый пользователь (min id)</option></select>
+          <input id="newPostTitle" placeholder="Название *" />
+          <textarea id="newPostDesc" placeholder="Описание"></textarea>
+          <div class="row">
+            <input id="newPostCity" placeholder="Город" />
+            <input id="newPostRegionId" type="number" placeholder="regionId (опц.)" />
+          </div>
+          <div class="row">
+            <input id="newPostLat" type="number" step="any" placeholder="Широта" />
+            <input id="newPostLng" type="number" step="any" placeholder="Долгота" />
+          </div>
+          <select id="newPostSeason">
+            <option value="spring">spring</option>
+            <option value="summer">summer</option>
+            <option value="autumn">autumn</option>
+            <option value="winter">winter</option>
+          </select>
+          <div class="row">
+            <input id="newPostAddress" placeholder="Адрес" />
+            <input id="newPostPhone" placeholder="Телефон" />
+          </div>
+          <input id="newPostWebsite" placeholder="Сайт (URL)" />
+          <label style="font-size: 13px;"><input type="checkbox" id="newPostNeedCar" /> needCar</label>
+          <label style="font-size: 13px;"><input type="checkbox" id="newPostVerified" /> verified</label>
+          <div>
+            <p class="muted" style="margin-bottom: 6px;">Интересы:</p>
+            <div id="newPlaceInterestChips" class="chips"></div>
+          </div>
+          <button class="primary" onclick="createNewPlace()">Создать место</button>
+        </div>
+      </div>
+
+      <div class="card">
         <h2>Места (посты)</h2>
         <div class="toolbar" style="margin-bottom: 8px;">
           <input id="postSearch" placeholder="Поиск по title/description/season" oninput="renderPostRows()" />
@@ -423,6 +512,8 @@ async def admin_editor_page():
       users: [],
       selectedPostId: null,
       selectedInterestIds: new Set(),
+      newPlaceInterestIds: new Set(),
+      newPlacePhotos: [],
     };
 
     const api = async (url, method = 'GET', body = null) => {
@@ -492,6 +583,117 @@ async def admin_editor_page():
         const active = state.selectedInterestIds.has(interest.id) ? 'active' : '';
         return `<span class="chip ${active}" onclick="toggleInterest(${interest.id})">${escapeHtml(interest.name)}</span>`;
       }).join('');
+    }
+
+    function populateNewPostAuthorSelect() {
+      const sel = byId('newPostAuthorId');
+      sel.innerHTML = '<option value="">Автор: первый пользователь (min id)</option>' +
+        state.users.map((u) => `<option value="${u.id}">#${u.id} ${escapeHtml(u.phone)}</option>`).join('');
+    }
+
+    function renderNewPlaceChips() {
+      const chips = byId('newPlaceInterestChips');
+      chips.innerHTML = state.interests.map((interest) => {
+        const active = state.newPlaceInterestIds.has(interest.id) ? 'active' : '';
+        return `<span class="chip ${active}" onclick="toggleNewPlaceInterest(${interest.id})">${escapeHtml(interest.name)}</span>`;
+      }).join('');
+    }
+
+    function toggleNewPlaceInterest(interestId) {
+      if (state.newPlaceInterestIds.has(interestId)) state.newPlaceInterestIds.delete(interestId);
+      else state.newPlaceInterestIds.add(interestId);
+      renderNewPlaceChips();
+    }
+
+    function renderNewPlacePhotoList() {
+      const el = byId('newPlacePhotoList');
+      if (!state.newPlacePhotos.length) {
+        el.textContent = 'Файлов пока нет.';
+        return;
+      }
+      el.innerHTML = state.newPlacePhotos.map((url, i) =>
+        `<div style="margin:4px 0;">${escapeHtml(url)} <button type="button" class="ghost" onclick="removeNewPlacePhoto(${i})">убрать</button></div>`
+      ).join('');
+    }
+
+    function removeNewPlacePhoto(index) {
+      state.newPlacePhotos.splice(index, 1);
+      renderNewPlacePhotoList();
+    }
+
+    async function uploadNewPlaceFiles(inputEl) {
+      const files = inputEl.files;
+      if (!files || !files.length) return;
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+          const res = await fetch('/api/upload', { method: 'POST', body: fd });
+          const text = await res.text();
+          let j;
+          try { j = text ? JSON.parse(text) : null; } catch (_) { j = null; }
+          if (!res.ok) {
+            setStatus('Ошибка upload: ' + (text || res.status), false);
+            return;
+          }
+          if (j && j.url) state.newPlacePhotos.push(j.url);
+        } catch (e) {
+          setStatus('Ошибка upload: ' + e.message, false);
+          return;
+        }
+      }
+      inputEl.value = '';
+      renderNewPlacePhotoList();
+      setStatus('Файлы загружены');
+    }
+
+    async function createNewPlace() {
+      const title = byId('newPostTitle').value.trim();
+      if (!title) { setStatus('Укажите название места', false); return; }
+      const rid = byId('newPostRegionId').value.trim();
+      const latS = byId('newPostLat').value.trim();
+      const lngS = byId('newPostLng').value.trim();
+      const authorS = byId('newPostAuthorId').value.trim();
+      const body = {
+        title,
+        description: byId('newPostDesc').value.trim() || null,
+        city: byId('newPostCity').value.trim() || null,
+        regionId: rid ? parseInt(rid, 10) : null,
+        geoLat: latS ? parseFloat(latS) : null,
+        geoLng: lngS ? parseFloat(lngS) : null,
+        season: byId('newPostSeason').value,
+        interestIds: Array.from(state.newPlaceInterestIds.values()),
+        photos: state.newPlacePhotos.slice(),
+        authorUserId: authorS ? parseInt(authorS, 10) : null,
+        address: byId('newPostAddress').value.trim() || null,
+        phone: byId('newPostPhone').value.trim() || null,
+        website: byId('newPostWebsite').value.trim() || null,
+        needCar: byId('newPostNeedCar').checked,
+        verified: byId('newPostVerified').checked,
+      };
+      try {
+        await api('/api/admin/posts', 'POST', body);
+        setStatus('Место создано');
+        state.newPlaceInterestIds.clear();
+        state.newPlacePhotos = [];
+        byId('newPostTitle').value = '';
+        byId('newPostDesc').value = '';
+        byId('newPostCity').value = '';
+        byId('newPostRegionId').value = '';
+        byId('newPostLat').value = '';
+        byId('newPostLng').value = '';
+        byId('newPostAddress').value = '';
+        byId('newPostPhone').value = '';
+        byId('newPostWebsite').value = '';
+        byId('newPostNeedCar').checked = false;
+        byId('newPostVerified').checked = false;
+        byId('newPostSeason').value = 'spring';
+        renderNewPlacePhotoList();
+        renderNewPlaceChips();
+        await loadDashboard();
+      } catch (e) {
+        setStatus('Ошибка создания: ' + e.message, false);
+      }
     }
 
     function renderInterestsList() {
@@ -628,6 +830,9 @@ async def admin_editor_page():
         renderInterestsList();
         renderUsersList();
         renderInterestChips();
+        populateNewPostAuthorSelect();
+        renderNewPlaceChips();
+        renderNewPlacePhotoList();
         try {
           await loadAchievements();
         } catch (ae) {
@@ -757,6 +962,10 @@ async def admin_editor_page():
     window.deleteInterest = deleteInterest;
     window.createRuleAchievement = createRuleAchievement;
     window.deleteAchievement = deleteAchievement;
+    window.uploadNewPlaceFiles = uploadNewPlaceFiles;
+    window.toggleNewPlaceInterest = toggleNewPlaceInterest;
+    window.removeNewPlacePhoto = removeNewPlacePhoto;
+    window.createNewPlace = createNewPlace;
 
     loadDashboard();
   </script>
@@ -870,6 +1079,52 @@ async def get_admin_dashboard(
     )
 
 
+@router.post(
+    "/posts",
+    response_model=AdminPostCard,
+    status_code=status.HTTP_201_CREATED,
+    summary="Admin: создать место",
+    description=(
+        "Создаёт место (пост) от имени выбранного пользователя или первого пользователя в БД. "
+        "Фото — URL после загрузки через POST /api/upload."
+    ),
+    response_description="Созданное место.",
+)
+async def admin_create_post(
+    payload: AdminPostCreateRequest,
+    db: AsyncSession = Depends(get_db_session),
+):
+    author = await _resolve_admin_author(db, payload.authorUserId)
+    created = await _post_service(db).create_post(
+        author=author,
+        title=payload.title,
+        city=payload.city,
+        description=payload.description,
+        geo_lat=payload.geoLat,
+        geo_lng=payload.geoLng,
+        season=payload.season,
+        interest_ids=payload.interestIds,
+        region_id=payload.regionId,
+        photo_urls=payload.photos,
+        address=payload.address,
+        phone=payload.phone,
+        website=payload.website,
+        need_car=payload.needCar,
+        verified=payload.verified,
+    )
+    post, avg_rating = await _post_service(db).get_post_or_404(created.id)
+    return AdminPostCard(
+        id=post.id,
+        title=post.title,
+        description=post.description,
+        interestIds=[interest.id for interest in post.interests],
+        season=post.season,
+        createdAt=post.created_at,
+        updatedAt=post.updated_at,
+        averageRating=(round(float(avg_rating), 2) if avg_rating is not None else None),
+    )
+
+
 @router.patch(
     "/posts/{post_id}",
     response_model=AdminPostCard,
@@ -887,11 +1142,18 @@ async def admin_update_post(
         post_id=post_id,
         title=payload.title,
         region_id=payload.regionId,
+        city=payload.city,
         description=payload.description,
         geo_lat=payload.geoLat,
         geo_lng=payload.geoLng,
         season=payload.season,
         interest_ids=payload.interestIds,
+        photo_urls=payload.photos,
+        address=payload.address,
+        phone=payload.phone,
+        website=payload.website,
+        need_car=payload.needCar,
+        verified=payload.verified,
     )
     _, avg_rating = await _post_service(db).get_post_or_404(post.id)
     return AdminPostCard(
