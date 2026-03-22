@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.auth import get_current_user
 from app.core.dependencies import get_db_session
 from app.models.associations import FilterPreset
+from app.models.geo import GeoRegion
 from app.models.user import User
 
 router = APIRouter(prefix="/filters")
@@ -109,6 +110,69 @@ FILTER_CONFIG = FilterConfigOut(
 )
 async def get_filter_config():
     return FILTER_CONFIG
+
+
+CITY_INFO: dict[str, dict] = {
+    "Краснодар": {"desc": "Столица края. Парк Галицкого, улица Красная, стадион. Жарко летом.", "avgPrice": 3500},
+    "Сочи": {"desc": "Море и горы. Олимпийский парк, Роза Хутор, дендрарий.", "avgPrice": 5000},
+    "Новороссийск": {"desc": "Порт, Абрау-Дюрсо рядом. Ветер норд-ост, набережная, мемориал.", "avgPrice": 3000},
+    "Анапа": {"desc": "Песчаные пляжи, Кипарисовое озеро, семейный курорт.", "avgPrice": 3500},
+    "Геленджик": {"desc": "Бухта, канатка на Сафари-парк, скала Парус.", "avgPrice": 4000},
+    "Горячий Ключ": {"desc": "Термальные источники, Дантово ущелье, тишина.", "avgPrice": 2500},
+    "Красная Поляна": {"desc": "Горы 2320м, лыжи зимой, трекинг летом.", "avgPrice": 6000},
+    "Туапсе": {"desc": "Скала Киселёва, лесистые горы, немноголюдно.", "avgPrice": 2500},
+    "Ейск": {"desc": "Азовское море, мелко и тепло. Коса, виндсёрфинг.", "avgPrice": 2000},
+    "Тамань": {"desc": "Вино, грязевые вулканы, коса Тузла. Лермонтов был.", "avgPrice": 2000},
+    "Армавир": {"desc": "Купеческий город, парк, тихо. Транзит на юг.", "avgPrice": 2000},
+    "Кабардинка": {"desc": "Старый парк, набережная, тише Геленджика.", "avgPrice": 3500},
+    "Архипо-Осиповка": {"desc": "Долина у моря, водопады рядом, дольмены.", "avgPrice": 3000},
+    "Апшеронск": {"desc": "Гуамское ущелье, узкоколейка, горный воздух.", "avgPrice": 2000},
+    "Псебай": {"desc": "Ворота в горы. Рафтинг, скалы, мало туристов.", "avgPrice": 1500},
+}
+
+
+@router.get(
+    "/cities",
+    summary="Города с фото, описанием и ценами",
+)
+async def get_cities_with_photos(
+    db: AsyncSession = Depends(get_db_session),
+):
+    from sqlalchemy import func as sa_func
+    from app.models.post import Post
+
+    result = await db.execute(
+        select(GeoRegion)
+        .where(GeoRegion.type == "city")
+        .order_by(GeoRegion.name)
+    )
+    cities = result.scalars().all()
+
+    # Count places per city
+    counts = {}
+    count_result = await db.execute(
+        select(Post.region_id, sa_func.count(Post.id))
+        .where(Post.region_id.isnot(None))
+        .group_by(Post.region_id)
+    )
+    for region_id, cnt in count_result.all():
+        counts[region_id] = cnt
+
+    out = []
+    for c in cities:
+        info = CITY_INFO.get(c.name, {})
+        out.append({
+            "id": c.id,
+            "name": c.name,
+            "slug": c.slug,
+            "photo": c.polygon,
+            "centroid": c.centroid,
+            "population": c.population,
+            "description": info.get("desc"),
+            "avgPricePerDay": info.get("avgPrice"),
+            "placesCount": counts.get(c.id, 0),
+        })
+    return out
 
 
 # ── User presets CRUD ────────────────────────────────────────────────────────
