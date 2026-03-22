@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 from datetime import date
 from typing import Optional
 
@@ -37,6 +38,7 @@ class RouteBuildRequest(BaseModel):
 class RouteBuildResponse(BaseModel):
     routeId: int
     status: str
+    shareToken: str | None = None
 
 
 class RouteStatusResponse(BaseModel):
@@ -204,12 +206,14 @@ async def build_route(
     from app.services.pipeline import RouteBuilder
 
     params = body.model_dump(exclude_none=True, mode="json")
+    share_token = secrets.token_urlsafe(8)
 
     route = Route(
         author_id=user.id,
         title=f"Маршрут {body.groupType or 'solo'}",
         status="draft",
         params=params,
+        share_token=share_token,
     )
     db.add(route)
     await db.commit()
@@ -221,7 +225,7 @@ async def build_route(
         builder.run,
     )
 
-    return RouteBuildResponse(routeId=route.id, status="draft")
+    return RouteBuildResponse(routeId=route.id, status="draft", shareToken=route.share_token)
 
 
 @router.get(

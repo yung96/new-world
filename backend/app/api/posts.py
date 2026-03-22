@@ -133,14 +133,25 @@ async def create_post(
     "/posts",
     response_model=PostListResponse,
     summary="Список постов",
-    description="Возвращает список постов с пагинацией.",
+    description="Возвращает список постов с пагинацией. Поддерживает фильтрацию по поиску, городу, сезону и региону.",
 )
 async def list_posts(
     page: int = Query(default=1, ge=1),
     pageSize: int = Query(default=20, ge=1, le=100),
+    search: str | None = Query(default=None, description="Поиск по заголовку (ILIKE)."),
+    city: str | None = Query(default=None, description="Фильтр по городу (ILIKE)."),
+    season: Season | None = Query(default=None, description="Фильтр по сезону."),
+    regionId: int | None = Query(default=None, description="Фильтр по ID региона."),
     db: AsyncSession = Depends(get_db_session),
 ):
-    rows, total = await _service(db).list_posts(page=page, page_size=pageSize)
+    rows, total = await _service(db).list_posts(
+        page=page,
+        page_size=pageSize,
+        search=search,
+        city=city,
+        season=season,
+        region_id=regionId,
+    )
     items = [_to_response(post, avg_rating) for post, avg_rating in rows]
     return PostListResponse(items=items, total=total, page=page, pageSize=pageSize)
 

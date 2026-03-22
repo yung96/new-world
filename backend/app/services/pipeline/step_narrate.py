@@ -6,8 +6,10 @@ from typing import Any
 from loguru import logger
 from sqlalchemy import select
 
+from app.core.config import settings
 from app.db import async_session_factory
 from app.models.route import Route, RouteSegment, SegmentItem
+from app.services.gpt_service import GptService
 
 
 async def step_narrate(route_id: int, params: dict[str, Any]) -> None:
@@ -71,8 +73,7 @@ async def step_narrate(route_id: int, params: dict[str, Any]) -> None:
             "totalKm": p.get("total_km", 0),
         }
 
-        # TODO: real LLM call here — send llm_context, get structured response
-        # For now: stub narrative
+        # Build stub narrative as fallback
         weather = p.get("weather", {})
         group = p.get("groupType", "solo")
         events = p.get("events", [])
@@ -102,7 +103,54 @@ async def step_narrate(route_id: int, params: dict[str, Any]) -> None:
             for o in offers:
                 lines.append(f"  • {o['title']}: {o['description']}")
 
-        route.narrative = "\n".join(lines)
+        stub_narrative = "\n".join(lines)
+
+        # GPT call: use real LLM if key is configured, otherwise fall back to stub
+        gpt_key = settings.GPT_CLIENT_KEY
+        narrative = stub_narrative
+
+        if gpt_key and gpt_key.lower() not in ("fake", "x", ""):
+            try:
+                sys_prompt = (
+                    "Ты составляешь описание туристического маршрута по Краснодарскому краю. "
+                    "Отвечай только текстом маршрута, без вводных фраз."
+                )
+                user_prompt = (
+                    "Ты составляешь описание туристического маршрута по Краснодарскому краю.\n\n"
+                    f"Контекст маршрута (JSON):\n{json.dumps(llm_context, ensure_ascii=False, indent=2)}\n\n"
+                    "Напиши от второго лица (\"вы\") тёплый текст 3-5 абзацев:\n"
+                    "- Введение про маршрут (куда, на сколько дней, для кого)\n"
+                    "- По каждой остановке: что там делать, что попробовать, на что обратить внимание\n"
+                    "- Если есть события на даты — упомяни\n"
+                    "- Если есть акции — упомяни\n"
+                    "- Конкретные детали: расстояния, время в пути, погода\n"
+                    "- Без слов \"уникальный\", \"незабываемый\", \"удивительный\""
+                )
+
+                gpt = GptService()
+                try:
+                    completion = await gpt.request_openai_text_response(
+                        sys_prompt=sys_prompt,
+                        user_prompt=user_prompt,
+                        max_tokens=1500,
+                    )
+                    gpt_text = completion.choices[0].message.content
+                    if gpt_text and gpt_text.strip():
+                        narrative = gpt_text.strip()
+                        logger.info("[pipeline] narrate: GPT narrative generated for route {}", route_id)
+                    else:
+                        logger.warning("[pipeline] narrate: GPT returned empty content, using stub")
+                finally:
+                    await gpt.close()
+
+            except Exception as exc:
+                logger.warning(
+                    "[pipeline] narrate: GPT call failed for route {}, using stub. Error: {}",
+                    route_id,
+                    exc,
+                )
+
+        route.narrative = narrative
 
         # Save context for future LLM
         pp = dict(route.params) if route.params else {}

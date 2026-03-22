@@ -46,10 +46,30 @@ class PostService:
         return post
 
     async def list_posts(
-        self, *, page: int, page_size: int
+        self,
+        *,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        city: str | None = None,
+        season: Season | None = None,
+        region_id: int | None = None,
     ) -> tuple[list[tuple[Post, float | None]], int]:
         offset = (page - 1) * page_size
+
+        filters = []
+        if search:
+            filters.append(Post.title.ilike(f"%{search}%"))
+        if city:
+            filters.append(Post.city.ilike(f"%{city}%"))
+        if season:
+            filters.append(Post.season == season)
+        if region_id:
+            filters.append(Post.region_id == region_id)
+
         total_stmt = select(func.count(Post.id))
+        if filters:
+            total_stmt = total_stmt.where(*filters)
         total = int((await self.db.execute(total_stmt)).scalar_one() or 0)
 
         rating_subquery = (
@@ -69,6 +89,8 @@ class PostService:
             .offset(offset)
             .limit(page_size)
         )
+        if filters:
+            stmt = stmt.where(*filters)
         rows = (await self.db.execute(stmt)).all()
         return rows, total
 

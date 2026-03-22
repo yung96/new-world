@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Literal
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer
 
 from pydantic import Field
@@ -11,9 +12,10 @@ from app.api.base_schema import BasePydanticModel
 
 from app.core.dependencies import get_db_session
 from app.models.achievement import Achievement
-from app.models.associations import user_achievements
+from app.models.associations import user_achievements, UserSwipedPost
 from app.models.interest import Interest
-from app.models.associations import user_interests
+from app.models.associations import user_interests, post_interests
+from app.models.post import Post
 from app.models.review import Review
 from app.models.route import Route
 from app.models.user import User
@@ -336,3 +338,128 @@ async def update_me(
         "avatarUrl": current_user.avatar_url,
         "bio": current_user.bio,
     }
+
+
+# --- Onboarding schemas ---
+
+
+class OnboardingCompleteRequest(BasePydanticModel):
+    interestIds: list[int] = Field(default_factory=list, description="ID интересов, отмеченных пользователем во время онбординга.")
+
+
+class OnboardingCompleteResponse(BasePydanticModel):
+    ok: bool
+    count: int = Field(description="Число новых записей, добавленных в user_interests.")
+
+
+class OnboardingSwipeRequest(BasePydanticModel):
+    postId: int = Field(description="ID карточки места.")
+    direction: Literal["left", "right"] = Field(description="Направление свайпа: right — понравилось, left — нет.")
+
+
+class OnboardingSwipeResponse(BasePydanticModel):
+    ok: bool
+
+
+# --- Onboarding endpoints ---
+
+
+@router.post(
+    "/onboarding/complete",
+    response_model=OnboardingCompleteResponse,
+    summary="Завершить онбординг — привязать интересы по свайпам",
+)
+async def onboarding_complete(
+    body: OnboardingCompleteRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    if not body.interestIds:
+        return OnboardingCompleteResponse(ok=True, count=0)
+
+    # Verify all interest IDs actually exist
+    existing_stmt = select(Interest.id).where(Interest.id.in_(body.interestIds))
+    existing_ids = {row[0] for row in (await db.execute(existing_stmt)).fetchall()}
+
+    # Find which ones the user doesn't have yet
+    already_stmt = select(user_interests.c.interest_id).where(
+        user_interests.c.user_id == current_user.id,
+        user_interests.c.interest_id.in_(existing_ids),
+    )
+    already_added = {row[0] for row in (await db.execute(already_stmt)).fetchall()}
+
+    to_insert = existing_ids - already_added
+    if to_insert:
+        await db.execute(
+            user_interests.insert(),
+            [{"user_id": current_user.id, "interest_id": i, "weight": 1} for i in to_insert],
+        )
+        await db.commit()
+
+    return OnboardingCompleteResponse(ok=True, count=len(to_insert))
+
+
+@router.post(
+    "/onboarding/swipe",
+    response_model=OnboardingSwipeResponse,
+    summary="Записать свайп онбординга",
+)
+async def onboarding_swipe(
+    body: OnboardingSwipeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    # Validate post exists
+    post = await db.get(Post, body.postId)
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    # Upsert swipe record (ignore if already swiped this post)
+    existing_swipe_stmt = select(UserSwipedPost).where(
+        UserSwipedPost.user_id == current_user.id,
+        UserSwipedPost.post_id == body.postId,
+    )
+    existing_swipe = (await db.execute(existing_swipe_stmt)).scalar_one_or_none()
+
+    if existing_swipe is None:
+        swipe = UserSwipedPost(
+            user_id=current_user.id,
+            post_id=body.postId,
+            direction=body.direction,
+        )
+        db.add(swipe)
+        await db.flush()
+
+    # On right swipe: boost weight for each of the post's interests by 1
+    if body.direction == "right":
+        interest_ids_stmt = select(post_interests.c.interest_id).where(
+            post_interests.c.post_id == body.postId
+        )
+        interest_ids = [row[0] for row in (await db.execute(interest_ids_stmt)).fetchall()]
+
+        for interest_id in interest_ids:
+            exists_stmt = select(user_interests.c.weight).where(
+                user_interests.c.user_id == current_user.id,
+                user_interests.c.interest_id == interest_id,
+            )
+            row = (await db.execute(exists_stmt)).first()
+            if row is not None:
+                await db.execute(
+                    user_interests.update()
+                    .where(
+                        user_interests.c.user_id == current_user.id,
+                        user_interests.c.interest_id == interest_id,
+                    )
+                    .values(weight=user_interests.c.weight + 1)
+                )
+            else:
+                await db.execute(
+                    user_interests.insert().values(
+                        user_id=current_user.id,
+                        interest_id=interest_id,
+                        weight=1,
+                    )
+                )
+
+    await db.commit()
+    return OnboardingSwipeResponse(ok=True)
