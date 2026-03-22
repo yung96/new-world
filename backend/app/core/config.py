@@ -89,9 +89,27 @@ class Settings(BaseSettings):
         default=None,
         description=(
             "Секрет для POST /ivan-alt/local-routes/test-run и панели «одна кнопка». "
-            "Если не задан — endpoint отключён (404)."
+            "Если задан — без заголовка X-Ivan-Alt-Test-Secret будет 404."
         ),
     )
+    IVAN_ALT_E2E_ALLOW_NO_SECRET: bool = Field(
+        default=False,
+        description=(
+            "Только локальная разработка: если IVAN_ALT_TEST_SECRET не задан, "
+            "разрешить POST .../test-run без заголовка. На публичных стендах не включать."
+        ),
+    )
+
+    @property
+    def ivan_alt_e2e_panel_enabled(self) -> bool:
+        return bool(self.IVAN_ALT_TEST_SECRET) or self.IVAN_ALT_E2E_ALLOW_NO_SECRET
+
+    def ivan_alt_test_run_authorized(self, header_secret: str | None) -> bool:
+        if self.IVAN_ALT_TEST_SECRET:
+            return header_secret == self.IVAN_ALT_TEST_SECRET
+        if self.IVAN_ALT_E2E_ALLOW_NO_SECRET:
+            return True
+        return False
 
     TRAVEL_API_KEY: str = Field(description="API TRAVEL для глобального подбора рейсов")
     TGIS_API_KEY: str = Field(description="API 2GIS")

@@ -210,17 +210,19 @@ _IVAN_ALT_TEST_PANEL_HTML = """
 <body>
   <div class="wrap">
     <h1>Ivan-alt — один клик: юзер, интересы, карточки → LLM</h1>
-    <p class="muted">API: <code id="apiBase"></code> · <code>POST …/test-run</code> с заголовком <code>X-Ivan-Alt-Test-Secret</code></p>
-    <p id="noSecret" class="warn" style="display:none">На сервере не задан <code>IVAN_ALT_TEST_SECRET</code> — endpoint отключён.</p>
+    <p class="muted">API: <code id="apiBase"></code> · <code>POST …/test-run</code><span id="secretHint"></span></p>
+    <p id="noSecret" class="warn" style="display:none">E2E выключен: задайте <code>IVAN_ALT_TEST_SECRET</code> или <code>IVAN_ALT_E2E_ALLOW_NO_SECRET=true</code> (только локально).</p>
 
     <div class="card">
-      <label>Секрет (как в .env <code>IVAN_ALT_TEST_SECRET</code>)</label>
-      <input type="password" id="secret" autocomplete="off" placeholder="вставьте секрет" />
+      <div id="secretBlock">
+        <label>Секрет (как в .env <code>IVAN_ALT_TEST_SECRET</code>)</label>
+        <input type="password" id="secret" autocomplete="off" placeholder="вставьте секрет" />
+      </div>
       <div class="row">
         <label><input type="checkbox" id="skipLlm" /> skipLlm — без вызова нейросети (черновик)</label>
       </div>
       <br/>
-      <button class="primary" type="button" id="go">Запустить тест</button>
+      <button class="primary" type="button" id="go">Один клик: юзер + карточки + генерация</button>
     </div>
 
     <div class="card">
@@ -234,30 +236,50 @@ _IVAN_ALT_TEST_PANEL_HTML = """
   </div>
   <script>
     const API_ROOT = __API_MOUNT__;
-    const SECRET_OK = __TEST_SECRET_CONFIGURED__;
+    const PANEL_OK = __PANEL_OK__;
+    const NEEDS_SECRET = __NEEDS_SECRET__;
     document.getElementById('apiBase').textContent = API_ROOT;
-    if (!SECRET_OK) document.getElementById('noSecret').style.display = 'block';
+    if (!PANEL_OK) document.getElementById('noSecret').style.display = 'block';
+    const hint = document.getElementById('secretHint');
+    if (NEEDS_SECRET) {
+      hint.textContent = ' + заголовок X-Ivan-Alt-Test-Secret';
+    } else if (PANEL_OK) {
+      hint.textContent = ' (локально без секрета)';
+    }
+    if (!NEEDS_SECRET) {
+      document.getElementById('secretBlock').style.display = 'none';
+    } else {
+      try {
+        const saved = localStorage.getItem('ivan_alt_test_secret');
+        if (saved) document.getElementById('secret').value = saved;
+      } catch (e) {}
+    }
 
     document.getElementById('go').onclick = async () => {
       const btn = document.getElementById('go');
       const secret = document.getElementById('secret').value.trim();
       document.getElementById('inp').textContent = '…';
       document.getElementById('out').textContent = '…';
-      if (!SECRET_OK) {
-        alert('Сервер без IVAN_ALT_TEST_SECRET');
+      if (!PANEL_OK) {
+        alert('E2E на сервере выключен (см. .env)');
         return;
       }
-      if (!secret) {
+      if (NEEDS_SECRET && !secret) {
         alert('Нужен секрет');
         return;
       }
       btn.disabled = true;
       const q = new URLSearchParams();
       if (document.getElementById('skipLlm').checked) q.set('skipLlm', 'true');
+      const headers = {};
+      if (NEEDS_SECRET && secret) {
+        headers['X-Ivan-Alt-Test-Secret'] = secret;
+        try { localStorage.setItem('ivan_alt_test_secret', secret); } catch (e) {}
+      }
       try {
         const res = await fetch(API_ROOT + '/ivan-alt/local-routes/test-run?' + q.toString(), {
           method: 'POST',
-          headers: { 'X-Ivan-Alt-Test-Secret': secret },
+          headers,
         });
         const data = await res.json().catch(() => ({}));
         const llmIn = data.llmInput || {};
@@ -302,10 +324,9 @@ async def ivan_alt_test_panel():
         _IVAN_ALT_TEST_PANEL_HTML.replace(
             "__API_MOUNT__",
             json.dumps(settings.api_mount_path.rstrip("/")),
-        ).replace(
-            "__TEST_SECRET_CONFIGURED__",
-            "true" if settings.IVAN_ALT_TEST_SECRET else "false",
         )
+        .replace("__PANEL_OK__", json.dumps(settings.ivan_alt_e2e_panel_enabled))
+        .replace("__NEEDS_SECRET__", json.dumps(bool(settings.IVAN_ALT_TEST_SECRET)))
     )
     return HTMLResponse(content=html)
 
@@ -320,7 +341,7 @@ async def ivan_alt_test_run(
     x_ivan_alt_test_secret: str | None = Header(None, alias="X-Ivan-Alt-Test-Secret"),
     db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, Any]:
-    if not settings.IVAN_ALT_TEST_SECRET or x_ivan_alt_test_secret != settings.IVAN_ALT_TEST_SECRET:
+    if not settings.ivan_alt_test_run_authorized(x_ivan_alt_test_secret):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
 
     suffix = uuid.uuid4().hex[:10]
