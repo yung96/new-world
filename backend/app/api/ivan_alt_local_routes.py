@@ -228,6 +228,8 @@ _IVAN_ALT_TEST_PANEL_HTML = """
       <div class="row">
         <label><input type="checkbox" id="skipLlm" /> skipLlm — без вызова нейросети (черновик)</label>
       </div>
+      <label>Число мест в маршруте (n, из БД по весам интересов)</label>
+      <input type="number" id="nPlaces" min="1" max="12" value="2" />
       <p class="muted" style="margin-top:10px">Если в браузере «сеть потеряна» при живом API — часто таймаут прокси на длинном LLM; сначала прогони с галкой skipLlm или подними read_timeout у Caddy/nginx.</p>
       <br/>
       <button class="primary" type="button" id="go">Один клик: юзер + карточки + генерация</button>
@@ -271,6 +273,8 @@ _IVAN_ALT_TEST_PANEL_HTML = """
       btn.disabled = true;
       const q = new URLSearchParams();
       if (document.getElementById('skipLlm').checked) q.set('skipLlm', 'true');
+      const nVal = parseInt(document.getElementById('nPlaces').value, 10);
+      if (!Number.isNaN(nVal) && nVal >= 1 && nVal <= 12) q.set('n', String(nVal));
       const headers = {};
       if (NEEDS_SECRET && secret) {
         headers['X-Ivan-Alt-Test-Secret'] = secret;
@@ -330,12 +334,30 @@ async def ivan_alt_test_panel():
     return HTMLResponse(content=html)
 
 
+# Индексы 0..2 → интересы A,B,C; веса 20/8/2 дают разный relevanceScore у постов в БД.
+_E2E_THREE_INTEREST_POST_PATTERNS: list[list[int]] = [
+    [0],
+    [0],
+    [0, 1],
+    [1],
+    [2],
+    [1, 2],
+    [0, 2],
+    [0],
+    [1],
+    [0, 1],
+    [2],
+    [1, 2],
+]
+
+
 @router.post(
     "/local-routes/test-run",
     include_in_schema=False,
     summary="E2E: создать юзера, интересы, посты, вызвать генерацию (только с секретом)",
 )
 async def ivan_alt_test_run(
+    n: int = Query(2, ge=1, le=12, description="Сколько мест в маршруте (посты создаются в БД под выбранные веса)"),
     skip_llm: bool = Query(False, alias="skipLlm"),
     x_ivan_alt_test_secret: str | None = Header(None, alias="X-Ivan-Alt-Test-Secret"),
     db: AsyncSession = Depends(get_db_session),
@@ -352,41 +374,79 @@ async def ivan_alt_test_run(
 
     intr_a = await social.create_interest(f"E2E парк [{suffix}]", "🌳")
     intr_b = await social.create_interest(f"E2E музей [{suffix}]", "🏛")
-    await social.add_interests_to_user(user=user, interest_ids=[intr_a.id, intr_b.id])
-    await social.set_interest_weight_for_user(user=user, interest_id=intr_a.id, weight=10)
-    await social.set_interest_weight_for_user(user=user, interest_id=intr_b.id, weight=5)
+    interest_ids_for_user: list[int] = [intr_a.id, intr_b.id]
+    pairs: list[tuple[int, int]]
+    intr_c = None
+
+    if n <= 2:
+        await social.add_interests_to_user(user=user, interest_ids=interest_ids_for_user)
+        await social.set_interest_weight_for_user(user=user, interest_id=intr_a.id, weight=10)
+        await social.set_interest_weight_for_user(user=user, interest_id=intr_b.id, weight=5)
+        pairs = [(intr_a.id, 10), (intr_b.id, 5)]
+    else:
+        intr_c = await social.create_interest(f"E2E кофе/вид [{suffix}]", "☕")
+        interest_ids_for_user = [intr_a.id, intr_b.id, intr_c.id]
+        await social.add_interests_to_user(user=user, interest_ids=interest_ids_for_user)
+        await social.set_interest_weight_for_user(user=user, interest_id=intr_a.id, weight=20)
+        await social.set_interest_weight_for_user(user=user, interest_id=intr_b.id, weight=8)
+        await social.set_interest_weight_for_user(user=user, interest_id=intr_c.id, weight=2)
+        pairs = [(intr_a.id, 20), (intr_b.id, 8), (intr_c.id, 2)]
 
     start_lat, start_lng = 45.0355, 38.9753
-    p1 = await post_svc.create_post(
-        author=user,
-        title=f"E2E место А [{suffix}]",
-        city="Краснодар",
-        description="Авто-тест Ivan-alt: парк",
-        geo_lat=45.03565,
-        geo_lng=38.97545,
-        season=Season.spring,
-        interest_ids=[intr_a.id, intr_b.id],
-    )
-    p2 = await post_svc.create_post(
-        author=user,
-        title=f"E2E место Б [{suffix}]",
-        city="Краснодар",
-        description="Авто-тест Ivan-alt: музей",
-        geo_lat=45.03535,
-        geo_lng=38.97515,
-        season=Season.spring,
-        interest_ids=[intr_a.id, intr_b.id],
-    )
+    post_records: list[Any] = []
+
+    if n <= 2:
+        p1 = await post_svc.create_post(
+            author=user,
+            title=f"E2E место А [{suffix}]",
+            city="Краснодар",
+            description="Авто-тест Ivan-alt: парк",
+            geo_lat=45.03565,
+            geo_lng=38.97545,
+            season=Season.spring,
+            interest_ids=[intr_a.id, intr_b.id],
+        )
+        p2 = await post_svc.create_post(
+            author=user,
+            title=f"E2E место Б [{suffix}]",
+            city="Краснодар",
+            description="Авто-тест Ivan-alt: музей",
+            geo_lat=45.03535,
+            geo_lng=38.97515,
+            season=Season.spring,
+            interest_ids=[intr_a.id, intr_b.id],
+        )
+        post_records = [p1, p2]
+    else:
+        assert intr_c is not None
+        intrs = (intr_a, intr_b, intr_c)
+        labels = ("парк/сильный вес", "музей/средний", "кофе/лёгкий", "A+B", "B+C", "A+C")
+        for i in range(n):
+            memb = _E2E_THREE_INTEREST_POST_PATTERNS[i % len(_E2E_THREE_INTEREST_POST_PATTERNS)]
+            iids = [intrs[j].id for j in memb]
+            lat = start_lat + (i - n / 2) * 0.00012
+            lng = start_lng + (i - n / 2) * 0.0001
+            tag = labels[i % len(labels)]
+            pr = await post_svc.create_post(
+                author=user,
+                title=f"E2E точка {i + 1} [{suffix}] ({tag})",
+                city="Краснодар",
+                description=f"E2E пост #{i + 1}: интересы {memb}, для скоринга по весам 20/8/2",
+                geo_lat=lat,
+                geo_lng=lng,
+                season=Season.spring,
+                interest_ids=iids,
+            )
+            post_records.append(pr)
 
     route_svc = IvanAltLocalRouteService(db)
-    pairs = [(intr_a.id, 10), (intr_b.id, 5)]
     try:
         result, _saved = await route_svc.build_and_maybe_save(
             user=user,
             start_lat=start_lat,
             start_lng=start_lng,
             start_label="E2E старт",
-            n=2,
+            n=n,
             interest_weights=pairs,
             bbox_delta_degrees=0.08,
             save=False,
@@ -405,16 +465,20 @@ async def ivan_alt_test_run(
         "warnings": result.warnings,
         "usedLlm": result.used_llm,
     }
+    names_by_id = {intr_a.id: intr_a.name, intr_b.id: intr_b.name}
+    if intr_c is not None:
+        names_by_id[intr_c.id] = intr_c.name
     setup = {
         "phone": phone,
         "userId": user.id,
-        "interestIds": [intr_a.id, intr_b.id],
-        "interestNames": [intr_a.name, intr_b.name],
-        "postIds": [p1.id, p2.id],
+        "n": n,
+        "interestIds": interest_ids_for_user,
+        "interestNames": [names_by_id[i] for i in interest_ids_for_user],
+        "postIds": [p.id for p in post_records],
         "startLat": start_lat,
         "startLng": start_lng,
         "bboxDeltaDegrees": 0.08,
-        "interestWeights": [{"interestId": intr_a.id, "weight": 10}, {"interestId": intr_b.id, "weight": 5}],
+        "interestWeights": [{"interestId": iid, "weight": w} for iid, w in pairs],
     }
     return {
         "setup": setup,

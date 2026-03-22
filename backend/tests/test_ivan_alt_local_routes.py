@@ -162,3 +162,20 @@ async def test_ivan_alt_test_run_skip_llm(client):
     assert body["generateResult"]["usedLlm"] is False
     assert len(body["setup"]["postIds"]) == 2
     assert set(body["generateResult"]["candidateIds"]) == set(body["setup"]["postIds"])
+
+
+async def test_ivan_alt_test_run_n_six_skip_llm(client):
+    r = await client.post(
+        api("/ivan-alt/local-routes/test-run?skipLlm=true&n=6"),
+        headers={"X-Ivan-Alt-Test-Secret": "test-ivan-e2e-panel"},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["setup"]["n"] == 6
+    assert len(body["setup"]["postIds"]) == 6
+    assert len(body["setup"]["interestIds"]) == 3
+    cand = body["llmInput"]["context"]["candidatePlaces"]
+    assert len(cand) == 6
+    scores = [c["relevanceScore"] for c in cand]
+    assert max(scores) > min(scores), "веса 20/8/2 должны дать разный скоринг"
+    assert set(body["generateResult"]["candidateIds"]) == set(body["setup"]["postIds"])
