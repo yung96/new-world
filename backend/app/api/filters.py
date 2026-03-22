@@ -4,7 +4,7 @@ from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select, func, delete
+from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
@@ -14,6 +14,35 @@ from app.models.geo import GeoRegion
 from app.models.user import User
 
 router = APIRouter(prefix="/filters")
+
+
+async def _count_posts_per_city_region(db: AsyncSession) -> dict[int, int]:
+    """
+    Число постов на город (GeoRegion type=city): по FK region_id и по совпадению
+    Post.city с именем города, если region_id не задан (старый/частичный импорт).
+    """
+    from app.models.post import Post
+
+    stmt = (
+        select(GeoRegion.id, func.count(Post.id))
+        .select_from(GeoRegion)
+        .outerjoin(
+            Post,
+            or_(
+                Post.region_id == GeoRegion.id,
+                and_(
+                    Post.region_id.is_(None),
+                    Post.city.isnot(None),
+                    func.lower(func.btrim(Post.city))
+                    == func.lower(func.btrim(GeoRegion.name)),
+                ),
+            ),
+        )
+        .where(GeoRegion.type == "city")
+        .group_by(GeoRegion.id)
+    )
+    result = await db.execute(stmt)
+    return {rid: int(cnt) for rid, cnt in result.all()}
 
 
 # ── Static filter config (no auth, for building UI) ──────────────────────────
@@ -138,9 +167,6 @@ CITY_INFO: dict[str, dict] = {
 async def get_cities_with_photos(
     db: AsyncSession = Depends(get_db_session),
 ):
-    from sqlalchemy import func as sa_func
-    from app.models.post import Post
-
     result = await db.execute(
         select(GeoRegion)
         .where(GeoRegion.type == "city")
@@ -148,15 +174,7 @@ async def get_cities_with_photos(
     )
     cities = result.scalars().all()
 
-    # Count places per city
-    counts = {}
-    count_result = await db.execute(
-        select(Post.region_id, sa_func.count(Post.id))
-        .where(Post.region_id.isnot(None))
-        .group_by(Post.region_id)
-    )
-    for region_id, cnt in count_result.all():
-        counts[region_id] = cnt
+    counts = await _count_posts_per_city_region(db)
 
     out = []
     for c in cities:
@@ -232,13 +250,15 @@ async def get_map_points(
     from sqlalchemy import func as sa_func
     from app.models.post import Post
 
-    # Counts per region
+    # По районам — только FK (у постов обычно city, не район)
     counts = {}
     cnt_res = await db.execute(
         select(Post.region_id, sa_func.count(Post.id)).where(Post.region_id.isnot(None)).group_by(Post.region_id)
     )
     for rid, cnt in cnt_res.all():
         counts[rid] = cnt
+
+    city_places_count = await _count_posts_per_city_region(db)
 
     # Districts with polygons
     districts_res = await db.execute(select(GeoRegion).where(GeoRegion.type == "district"))
@@ -269,7 +289,7 @@ async def get_map_points(
             "centroid": c.centroid,
             "photo": c.photo_url,
             "population": c.population,
-            "placesCount": counts.get(c.id, 0),
+            "placesCount": city_places_count.get(c.id, 0),
             "description": CITY_INFO.get(c.name, {}).get("desc"),
             "avgPricePerDay": CITY_INFO.get(c.name, {}).get("avgPrice"),
         }

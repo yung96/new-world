@@ -6,6 +6,7 @@ Covered:
 - GET /api/filters/cities  — list of city objects with name/photo/description
 - GET /api/filters/regions  — list of region objects, filterable by ?type=city
 - GET /api/filters/map-points  — multi-layer response (districts, cities, places, routes)
+- placesCount по городам — посты с region_id и посты только с Post.city (без FK)
 """
 
 import pytest
@@ -56,6 +57,67 @@ async def test_filters_cities(client):
         assert "name" in item
         assert "photo" in item        # may be None but key must exist
         assert "description" in item  # may be None but key must exist
+
+
+@pytest.mark.asyncio
+async def test_filters_cities_places_count_merges_region_id_and_city_name(client, db_session):
+    """
+    placesCount учитывает:
+    - посты с Post.region_id = город;
+    - посты с region_id IS NULL, но Post.city (после trim) совпадает с именем города.
+    """
+    from app.models.geo import GeoRegion, GeoRegionType
+    from app.models.post import Season
+    from app.services.post_service import PostService
+    from app.services.user_service import get_or_create_user
+
+    city = GeoRegion(
+        name="Тестоград",
+        slug="testograd-places-count-merge",
+        type=GeoRegionType.city,
+        centroid="45.0,38.0",
+    )
+    db_session.add(city)
+    await db_session.commit()
+    await db_session.refresh(city)
+
+    author = await get_or_create_user(db_session, phone="+79990005001")
+    posts = PostService(db_session)
+
+    await posts.create_post(
+        author=author,
+        title="Только FK",
+        city=None,
+        description=None,
+        geo_lat=45.0,
+        geo_lng=38.0,
+        season=Season.summer,
+        interest_ids=[],
+        region_id=city.id,
+    )
+    await posts.create_post(
+        author=author,
+        title="Только city",
+        city="Тестоград",
+        description=None,
+        geo_lat=45.01,
+        geo_lng=38.01,
+        season=Season.summer,
+        interest_ids=[],
+        region_id=None,
+    )
+
+    resp = await client.get("/api/filters/cities")
+    assert resp.status_code == 200
+    row = next((x for x in resp.json() if x["name"] == "Тестоград"), None)
+    assert row is not None
+    assert row["placesCount"] == 2
+
+    mp = await client.get("/api/filters/map-points", params={"zoom": 10})
+    assert mp.status_code == 200
+    city_row = next((c for c in mp.json()["cities"] if c["name"] == "Тестоград"), None)
+    assert city_row is not None
+    assert city_row["placesCount"] == 2
 
 
 @pytest.mark.asyncio

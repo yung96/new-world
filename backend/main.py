@@ -60,7 +60,7 @@ OPENAPI_TAGS = [
     },
     {
         "name": "Admin",
-        "description": "Обезличенные admin endpoint-ы для MVP (дашборд и управление сущностями).",
+        "description": "Admin MVP: дашборд `/admin`, `GET/POST/PATCH` мест и интересов (`POST /api/admin/posts` — создание места с фото-URL после `/api/upload`).",
     },
 ]
 

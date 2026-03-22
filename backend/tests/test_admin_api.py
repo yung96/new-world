@@ -63,6 +63,38 @@ async def test_admin_can_edit_post_and_interest_set(client):
     assert payload["interestIds"] == [new_interest_id]
 
 
+async def test_admin_can_create_place(client):
+    user_headers = await _auth_headers(client, "+79990000003")
+    ci = await client.post(
+        "/api/interests",
+        json={"name": "Интерес для админ-создания"},
+        headers=user_headers,
+    )
+    assert ci.status_code == 201
+    interest_id = ci.json()["id"]
+    me = await client.get("/api/users/me", headers=user_headers)
+    assert me.status_code == 200
+    user_id = me.json()["id"]
+
+    resp = await client.post(
+        "/api/admin/posts",
+        json={
+            "title": "Место из админки",
+            "description": "Описание из теста",
+            "city": "Краснодар",
+            "geoLat": 45.04,
+            "geoLng": 38.98,
+            "interestIds": [interest_id],
+            "season": Season.summer.value,
+            "authorUserId": user_id,
+        },
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["title"] == "Место из админки"
+    assert interest_id in data["interestIds"]
+
+
 async def test_admin_can_rename_interest(client):
     user_headers = await _auth_headers(client, "+79990000002")
     create_interest = await client.post(
