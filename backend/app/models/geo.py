@@ -40,8 +40,9 @@ class GeoRegion(Base):
         nullable=True,
         index=True,
     )
-    polygon = Column(Text, nullable=True)
-    centroid = Column(Text, nullable=True)
+    polygon = Column(Text, nullable=True)  # GeoJSON boundary
+    centroid = Column(Text, nullable=True)  # "lat,lng"
+    photo_url = Column(Text, nullable=True)
     population = Column(Integer, nullable=True)
     timezone = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())

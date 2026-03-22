@@ -165,7 +165,7 @@ async def get_cities_with_photos(
             "id": c.id,
             "name": c.name,
             "slug": c.slug,
-            "photo": c.polygon,
+            "photo": c.photo_url,
             "centroid": c.centroid,
             "population": c.population,
             "description": info.get("desc"),
@@ -204,7 +204,7 @@ async def get_regions(
             "slug": r.slug,
             "type": r.type,
             "parentId": r.parent_id,
-            "photo": r.polygon,
+            "photo": r.photo_url,
             "centroid": r.centroid,
             "population": r.population,
         }
@@ -246,6 +246,7 @@ async def get_map_points(
         for rid, cnt in cnt_res.all():
             counts[rid] = cnt
 
+        import json as _json
         return {
             "level": "district",
             "points": [
@@ -255,7 +256,8 @@ async def get_map_points(
                     "slug": r.slug,
                     "type": "district",
                     "centroid": r.centroid,
-                    "photo": r.polygon,
+                    "photo": r.photo_url,
+                    "polygon": _json.loads(r.polygon) if r.polygon else None,
                     "population": r.population,
                     "placesCount": counts.get(r.id, 0),
                     "description": CITY_INFO.get(r.name, {}).get("desc"),
@@ -284,7 +286,7 @@ async def get_map_points(
                     "slug": c.slug,
                     "type": "city",
                     "centroid": c.centroid,
-                    "photo": c.polygon,
+                    "photo": c.photo_url,
                     "population": c.population,
                     "placesCount": counts.get(c.id, 0),
                     "description": CITY_INFO.get(c.name, {}).get("desc"),
