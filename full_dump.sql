@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict yEv9lEhoL5qAO7MDOW8fye32AXMAd5lycZPmtzPWq0RODhMMQgB55XoInfV4Pbl
+\restrict O3ESatQmOqDRkEehpz3VUc8gxuhBfkhVKwwMpTDabz4WSroKJXY5Ir4CJSJTEVT
 
 -- Dumped from database version 15.17 (Debian 15.17-1.pgdg13+1)
 -- Dumped by pg_dump version 18.2
@@ -1972,151 +1972,151 @@ COPY public.filter_presets (id, user_id, name, date_from, date_to, group_type, g
 --
 
 COPY public.geo_regions (id, name, slug, type, parent_id, polygon, centroid, population, timezone, created_at) FROM stdin;
-1	Россия	russia	country	\N	https://loremflickr.com/800/400/russia,flag,kremlin?random=1	60.0,90.0	\N	\N	2026-03-21 20:50:38.711698+00
-2	Краснодарский край	krasnodarskiy-kray	region	1	https://loremflickr.com/800/400/krasnodar,kuban,south+russia?random=2	44.77788090018502,40.06460274817761	5842238	Europe/Moscow	2026-03-21 20:50:38.711698+00
-3	городской округ Краснодар	gorodskoy-okrug-krasnodar	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=3	45.0937763,39.0164697	\N	\N	2026-03-21 20:52:33.744698+00
-4	Динской район	dinskoy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=4	45.2512976,39.0729717	\N	\N	2026-03-21 20:52:33.744698+00
-5	Красноармейский район	krasnoarmeyskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=5	45.3258944,38.4107362	\N	\N	2026-03-21 20:52:33.744698+00
-6	Северский район	severskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=6	44.7870953,38.7177143	\N	\N	2026-03-21 20:52:33.744698+00
-7	Абинский район	abinskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=7	44.8849241,38.2878967	\N	\N	2026-03-21 20:52:33.744698+00
-8	Славянский район	slavyanskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=8	45.4322275,37.8912155	\N	\N	2026-03-21 20:52:33.744698+00
-9	Крымский район	krymskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=9	44.9625269,37.8329466	\N	\N	2026-03-21 20:52:33.744698+00
-10	Темрюкский район	temryukskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=10	45.2643139,37.1537616	\N	\N	2026-03-21 20:52:33.744698+00
-11	муниципальный округ Анапа	munitsipalnyy-okrug-anapa	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=11	44.9513051,37.2719538	\N	\N	2026-03-21 20:52:33.744698+00
-12	городской округ Новороссийск	gorodskoy-okrug-novorossiysk	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=12	44.8305287,37.6731303	\N	\N	2026-03-21 20:52:33.744698+00
-13	городской округ Геленджик	gorodskoy-okrug-gelendzhik	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=13	44.5483408,38.2775379	\N	\N	2026-03-21 20:52:33.744698+00
-14	муниципальный округ Горячий Ключ	munitsipalnyy-okrug-goryachiy-klyuch	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=14	44.6128185,39.2430691	\N	\N	2026-03-21 20:52:33.744698+00
-15	Белореченский район	belorechenskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=15	44.7819868,39.7497583	\N	\N	2026-03-21 20:52:33.744698+00
-16	Апшеронский район	apsheronskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=16	44.3012439,39.6819443	\N	\N	2026-03-21 20:52:33.744698+00
-17	Туапсинский муниципальный округ	tuapsinskiy-munitsipalnyy-okrug	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=17	44.2686691,39.0958981	\N	\N	2026-03-21 20:52:33.744698+00
-18	городской округ Сочи	gorodskoy-okrug-sochi	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=18	43.7611586,39.9055726	\N	\N	2026-03-21 20:52:33.744698+00
-19	Мостовский район	mostovskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=19	44.147479,40.6360521	\N	\N	2026-03-21 20:52:33.744698+00
-20	Ейский район	eyskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=20	46.440845,38.1621064	\N	\N	2026-03-21 20:52:33.744698+00
-21	Щербиновский район	scherbinovskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=21	46.6270554,38.6635572	\N	\N	2026-03-21 20:52:33.744698+00
-22	Староминский район	starominskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=22	46.500066,39.0339113	\N	\N	2026-03-21 20:52:33.744698+00
-23	Приморско-Ахтарский муниципальный округ	primorsko-ahtarskiy-munitsipalnyy-okrug	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=23	45.9658004,38.2458817	\N	\N	2026-03-21 20:52:33.744698+00
-24	Калининский район	kalininskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=24	45.5305453,38.3965172	\N	\N	2026-03-21 20:52:33.744698+00
-25	Тимашёвский район	timashyovskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=25	45.5674671,38.9780234	\N	\N	2026-03-21 20:52:33.744698+00
-26	Брюховецкий район	bryuhovetskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=26	45.8546073,39.0608558	\N	\N	2026-03-21 20:52:33.744698+00
-27	Кущёвский район	kuschyovskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=27	46.5645301,39.6863422	\N	\N	2026-03-21 20:52:33.744698+00
-28	Крыловский район	krylovskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=28	46.398871,40.0499186	\N	\N	2026-03-21 20:52:33.744698+00
-29	Каневской район	kanevskoy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=29	46.137344,39.0081287	\N	\N	2026-03-21 20:52:33.744698+00
-30	Ленинградский муниципальный округ	leningradskiy-munitsipalnyy-okrug	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=30	46.2259654,39.417124	\N	\N	2026-03-21 20:52:33.744698+00
-31	Лабинский район	labinskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=31	44.4408676,40.9405803	\N	\N	2026-03-21 20:52:33.744698+00
-32	Отрадненский район	otradnenskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=32	44.308353,41.3975382	\N	\N	2026-03-21 20:52:33.744698+00
-33	Успенский район	uspenskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=33	44.8334244,41.4054616	\N	\N	2026-03-21 20:52:33.744698+00
-34	городской округ Армавир	gorodskoy-okrug-armavir	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=34	44.9207619,41.0792476	\N	\N	2026-03-21 20:52:33.744698+00
-35	Новокубанский район	novokubanskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=35	44.8909105,41.086172	\N	\N	2026-03-21 20:52:33.744698+00
-36	Курганинский район	kurganinskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=36	44.9583917,40.5554569	\N	\N	2026-03-21 20:52:33.744698+00
-37	Гулькевичский район	gulkevichskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=37	45.2512851,40.6553703	\N	\N	2026-03-21 20:52:33.744698+00
-38	Кавказский район	kavkazskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=38	45.523757,40.5997104	\N	\N	2026-03-21 20:52:33.744698+00
-39	Белоглинский район	beloglinskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=39	45.9864011,40.9013374	\N	\N	2026-03-21 20:52:33.744698+00
-40	Новопокровский район	novopokrovskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=40	45.968912,40.6050434	\N	\N	2026-03-21 20:52:33.744698+00
-41	Павловский район	pavlovskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=41	46.0803824,39.9225048	\N	\N	2026-03-21 20:52:33.744698+00
-42	Кореновский район	korenovskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=42	45.5610498,39.3911936	\N	\N	2026-03-21 20:52:33.744698+00
-43	Тбилисский район	tbilisskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=43	45.3846998,40.1606622	\N	\N	2026-03-21 20:52:33.744698+00
-44	Тихорецкий район	tihoretskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=44	45.8283988,40.1901302	\N	\N	2026-03-21 20:52:33.744698+00
-45	Выселковский район	vyselkovskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=45	45.6643217,39.8382777	\N	\N	2026-03-21 20:52:33.744698+00
-46	Усть-Лабинский район	ust-labinskiy-rayon	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=46	45.2697602,39.7456249	\N	\N	2026-03-21 20:52:33.744698+00
-47	городской округ Сириус	gorodskoy-okrug-sirius	district	2	https://loremflickr.com/800/400/landscape,rural,countryside?random=47	43.4067304,39.9664535	\N	\N	2026-03-21 20:52:33.744698+00
-48	Краснодар	krasnodar	city	2	https://loremflickr.com/800/400/city,town,street?random=48	45.0351532,38.9772396	1154885	\N	2026-03-21 20:52:49.875179+00
-49	Славянск-на-Кубани	slavyansk-na-kubani	city	2	https://loremflickr.com/800/400/city,town,street?random=49	45.2590875,38.1244609	61449	\N	2026-03-21 20:52:49.875179+00
-50	Темрюк	temryuk	city	2	https://loremflickr.com/800/400/city,town,street?random=50	45.2823609,37.3658235	39164	\N	2026-03-21 20:52:49.875179+00
-51	Анапа	anapa	city	2	https://loremflickr.com/800/400/city,town,street?random=51	44.894272,37.316887	82695	\N	2026-03-21 20:52:49.875179+00
-52	Приморско-Ахтарск	primorsko-ahtarsk	city	2	https://loremflickr.com/800/400/city,town,street?random=52	46.0433467,38.1560033	30465	\N	2026-03-21 20:52:49.875179+00
-53	Ейск	eysk	city	2	https://loremflickr.com/800/400/city,town,street?random=53	46.7112094,38.2747987	82534	\N	2026-03-21 20:52:49.875179+00
-54	Сочи	sochi	city	2	https://loremflickr.com/800/400/city,town,street?random=54	43.5854823,39.723109	446599	\N	2026-03-21 20:52:49.875179+00
-55	Геленджик	gelendzhik	city	2	https://loremflickr.com/800/400/city,town,street?random=55	44.5609447,38.0766832	80296	\N	2026-03-21 20:52:49.875179+00
-56	Кабардинка	kabardinka	city	2	https://loremflickr.com/800/400/city,town,street?random=56	44.6515718,37.9395292	7550	\N	2026-03-21 20:52:49.875179+00
-57	Горячий Ключ	goryachiy-klyuch	city	2	https://loremflickr.com/800/400/city,town,street?random=57	44.6342653,39.1363613	34585	\N	2026-03-21 20:52:49.875179+00
-58	Туапсе	tuapse	city	2	https://loremflickr.com/800/400/city,town,street?random=58	44.0984747,39.0718875	60707	\N	2026-03-21 20:52:49.875179+00
-59	Новороссийск	novorossiysk	city	2	https://loremflickr.com/800/400/city,town,street?random=59	44.7239578,37.7690711	261973	\N	2026-03-21 20:52:49.875179+00
-60	Армавир	armavir	city	2	https://loremflickr.com/800/400/city,town,street?random=60	44.9993585,41.1294061	187215	\N	2026-03-21 20:52:49.875179+00
-61	Тимашёвск	timashyovsk	city	2	https://loremflickr.com/800/400/city,town,street?random=61	45.6129685,38.9357743	52641	\N	2026-03-21 20:52:49.875179+00
-62	Павловская	pavlovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=62	46.1352,39.783	\N	\N	2026-03-21 20:52:49.875179+00
-63	Витязево	vityazevo	city	2	https://loremflickr.com/800/400/city,town,street?random=63	44.9897066,37.2607195	7936	\N	2026-03-21 20:52:49.875179+00
-64	Джубга	dzhubga	city	2	https://loremflickr.com/800/400/city,town,street?random=64	44.3170538,38.7043664	7024	\N	2026-03-21 20:52:49.875179+00
-65	Дагомыс	dagomys	city	2	https://loremflickr.com/800/400/city,town,street?random=65	43.6590048,39.6544373	17841	\N	2026-03-21 20:52:49.875179+00
-66	Усть-Лабинск	ust-labinsk	city	2	https://loremflickr.com/800/400/city,town,street?random=66	45.2094926,39.6901178	42062	\N	2026-03-21 20:52:49.875179+00
-67	Васюринская	vasyurinskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=67	45.1183262,39.4200463	13339	\N	2026-03-21 20:52:49.875179+00
-68	Воронежская	voronezhskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=68	45.2120476,39.5670828	8562	\N	2026-03-21 20:52:49.875179+00
-69	Пластуновская	plastunovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=69	45.2962422,39.2662799	10264	\N	2026-03-21 20:52:49.875179+00
-70	Платнировская	platnirovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=70	45.391981,39.3903857	12004	\N	2026-03-21 20:52:49.875179+00
-71	Елизаветинская	elizavetinskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=71	45.0480573,38.7928963	24755	\N	2026-03-21 20:52:49.875179+00
-72	Новомышастовская	novomyshastovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=72	45.1987319,38.5795212	10032	\N	2026-03-21 20:52:49.875179+00
-73	Динская	dinskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=73	45.2168713,39.2249757	34848	\N	2026-03-21 20:52:49.875179+00
-74	Белореченск	belorechensk	city	2	https://loremflickr.com/800/400/city,town,street?random=74	44.7614149,39.8712943	52322	\N	2026-03-21 20:52:49.875179+00
-75	Выселки	vyselki	city	2	https://loremflickr.com/800/400/city,town,street?random=75	45.5806221,39.6574237	19426	\N	2026-03-21 20:52:49.875179+00
-76	Афипский	afipskiy	city	2	https://loremflickr.com/800/400/city,town,street?random=76	44.9040435,38.8426821	19956	\N	2026-03-21 20:52:49.875179+00
-77	Северская	severskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=77	44.853421,38.6781253	24867	\N	2026-03-21 20:52:49.875179+00
-78	Ильский	ilskiy	city	2	https://loremflickr.com/800/400/city,town,street?random=78	44.8458544,38.5608255	24831	\N	2026-03-21 20:52:49.875179+00
-79	Крымск	krymsk	city	2	https://loremflickr.com/800/400/city,town,street?random=79	44.9295889,37.9880177	54420	\N	2026-03-21 20:52:49.875179+00
-80	Курганинск	kurganinsk	city	2	https://loremflickr.com/800/400/city,town,street?random=80	44.8851635,40.5894674	48194	\N	2026-03-21 20:52:49.875179+00
-81	Калининская	kalininskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=81	45.4856626,38.6598137	13391	\N	2026-03-21 20:52:49.875179+00
-82	Брюховецкая	bryuhovetskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=82	45.8006933,39.0006977	22024	\N	2026-03-21 20:52:49.875179+00
-83	Переясловская	pereyaslovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=83	45.844673,39.021858	8424	\N	2026-03-21 20:52:49.875179+00
-84	Каневская	kanevskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=84	46.0845999,38.9721929	41721	\N	2026-03-21 20:52:49.875179+00
-85	Стародеревянковская	staroderevyankovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=85	46.1277738,38.9713729	13482	\N	2026-03-21 20:52:49.875179+00
-86	Варениковская	varenikovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=86	45.121292,37.638737	14881	\N	2026-03-21 20:52:49.875179+00
-87	Старотитаровская	starotitarovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=87	45.2188185,37.1480059	12164	\N	2026-03-21 20:52:49.875179+00
-88	Тбилисская	tbilisskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=88	45.3635681,40.1898342	25317	\N	2026-03-21 20:52:49.875179+00
-89	Ладожская	ladozhskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=89	45.3076593,39.9268511	14828	\N	2026-03-21 20:52:49.875179+00
-90	Медвёдовская	medvyodovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=90	45.4525812,39.0167858	16793	\N	2026-03-21 20:52:49.875179+00
-91	Холмская	holmskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=91	44.8432658,38.3950178	17585	\N	2026-03-21 20:52:49.875179+00
-92	Ахтырский	ahtyrskiy	city	2	https://loremflickr.com/800/400/city,town,street?random=92	44.8559341,38.2941737	20863	\N	2026-03-21 20:52:49.875179+00
-93	Абинск	abinsk	city	2	https://loremflickr.com/800/400/city,town,street?random=93	44.8649528,38.1578189	36986	\N	2026-03-21 20:52:49.875179+00
-94	Старощербиновская	staroscherbinovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=94	46.6284506,38.6624971	18010	\N	2026-03-21 20:52:49.875179+00
-95	Новотитаровская	novotitarovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=95	45.2360889,38.9712606	24754	\N	2026-03-21 20:52:49.875179+00
-96	Апшеронск	apsheronsk	city	2	https://loremflickr.com/800/400/city,town,street?random=96	44.4674401,39.733173	40244	\N	2026-03-21 20:52:49.875179+00
-97	Тихорецк	tihoretsk	city	2	https://loremflickr.com/800/400/city,town,street?random=97	45.854679,40.128124	54582	\N	2026-03-21 20:52:49.875179+00
-98	Роговская	rogovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=98	45.734535,38.739555	7864	\N	2026-03-21 20:52:49.875179+00
-99	Новопокровская	novopokrovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=99	45.953815,40.707203	19684	\N	2026-03-21 20:52:49.875179+00
-100	Белая Глина	belaya-glina	city	2	https://loremflickr.com/800/400/city,town,street?random=100	46.0778137,40.8739482	17320	\N	2026-03-21 20:52:49.875179+00
-101	Архангельская	arhangelskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=101	45.6725524,40.2796117	8714	\N	2026-03-21 20:52:49.875179+00
-102	Нижнебаканская	nizhnebakanskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=102	44.8646355,37.8608578	8277	\N	2026-03-21 20:52:49.875179+00
-103	Анапская	anapskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=103	44.9002856,37.3832216	16107	\N	2026-03-21 20:52:49.875179+00
-104	Псебай	psebay	city	2	https://loremflickr.com/800/400/city,town,street?random=104	44.1092655,40.7902989	10613	\N	2026-03-21 20:52:49.875179+00
-105	Лабинск	labinsk	city	2	https://loremflickr.com/800/400/city,town,street?random=105	44.6347953,40.7242185	60971	\N	2026-03-21 20:52:49.875179+00
-106	Мостовской	mostovskoy	city	2	https://loremflickr.com/800/400/city,town,street?random=106	44.4138041,40.7899446	25006	\N	2026-03-21 20:52:49.875179+00
-107	Архипо-Осиповка	arhipo-osipovka	city	2	https://loremflickr.com/800/400/city,town,street?random=107	44.3703184,38.533611	7853	\N	2026-03-21 20:52:49.875179+00
-108	Новомихайловский	novomihaylovskiy	city	2	https://loremflickr.com/800/400/city,town,street?random=108	44.2533593,38.8447977	10792	\N	2026-03-21 20:52:49.875179+00
-109	Нефтегорск	neftegorsk	city	2	https://loremflickr.com/800/400/city,town,street?random=109	44.3555651,39.7034985	5188	\N	2026-03-21 20:52:49.875179+00
-110	Крыловская	krylovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=110	46.321865,39.962914	13621	\N	2026-03-21 20:52:49.875179+00
-111	Ленинградская	leningradskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=111	46.3212449,39.389554	36940	\N	2026-03-21 20:52:49.875179+00
-112	Новоминская	novominskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=112	46.317478,38.955532	11595	\N	2026-03-21 20:52:49.875179+00
-113	Кущёвская	kuschyovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=113	46.5650084,39.6273712	30200	\N	2026-03-21 20:52:49.875179+00
-114	Староминская	starominskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=114	46.5359488,39.0625056	29809	\N	2026-03-21 20:52:49.875179+00
-115	Михайловская	mihaylovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=115	44.990738,40.5999124	8245	\N	2026-03-21 20:52:49.875179+00
-116	Фастовецкая	fastovetskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=116	45.917324,40.154659	8573	\N	2026-03-21 20:52:49.875179+00
-117	Казанская	kazanskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=117	45.4074844,40.4406018	10991	\N	2026-03-21 20:52:49.875179+00
-118	Кавказская	kavkazskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=118	45.4393405,40.6697566	11164	\N	2026-03-21 20:52:49.875179+00
-119	Петровская	petrovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=119	45.430317,37.956711	13554	\N	2026-03-21 20:52:49.875179+00
-120	Новокубанск	novokubansk	city	2	https://loremflickr.com/800/400/city,town,street?random=120	45.1083184,41.0366896	35251	\N	2026-03-21 20:52:49.875179+00
-121	Гулькевичи	gulkevichi	city	2	https://loremflickr.com/800/400/city,town,street?random=121	45.3565119,40.6962256	34347	\N	2026-03-21 20:52:49.875179+00
-122	Советская	sovetskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=122	44.7836633,41.1711179	9021	\N	2026-03-21 20:52:49.875179+00
-123	Тамань	taman	city	2	https://loremflickr.com/800/400/city,town,street?random=123	45.2158646,36.7191326	10827	\N	2026-03-21 20:52:49.875179+00
-124	Марьянская	maryanskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=124	45.0991226,38.6367903	10643	\N	2026-03-21 20:52:49.875179+00
-125	Октябрьская	oktyabrskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=125	46.2837923,39.8102996	11252	\N	2026-03-21 20:52:49.875179+00
-126	Красносельский	krasnoselskiy	city	2	https://loremflickr.com/800/400/city,town,street?random=126	45.3934779,40.598473	7676	\N	2026-03-21 20:52:49.875179+00
-127	Успенское	uspenskoe	city	2	https://loremflickr.com/800/400/city,town,street?random=127	44.8346548,41.3850485	12409	\N	2026-03-21 20:52:49.875179+00
-128	Коноково	konokovo	city	2	https://loremflickr.com/800/400/city,town,street?random=128	44.8617355,41.325343	7880	\N	2026-03-21 20:52:49.875179+00
-129	Черноморский	chernomorskiy	city	2	https://loremflickr.com/800/400/city,town,street?random=129	44.849996,38.4944065	8512	\N	2026-03-21 20:52:49.875179+00
-130	Родниковская	rodnikovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=130	44.7685255,40.6579706	8346	\N	2026-03-21 20:52:49.875179+00
-131	Отрадная	otradnaya	city	2	https://loremflickr.com/800/400/city,town,street?random=131	44.3975687,41.5263169	23204	\N	2026-03-21 20:52:49.875179+00
-132	Кропоткин	kropotkin	city	2	https://loremflickr.com/800/400/city,town,street?random=132	45.4344413,40.5750274	79795	\N	2026-03-21 20:52:49.875179+00
-133	Кореновск	korenovsk	city	2	https://loremflickr.com/800/400/city,town,street?random=133	45.4635863,39.4487565	41828	\N	2026-03-21 20:52:49.875179+00
-134	Старокорсунская	starokorsunskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=134	45.0506551,39.3130266	12238	\N	2026-03-21 20:52:49.875179+00
-135	Хадыженск	hadyzhensk	city	2	https://loremflickr.com/800/400/city,town,street?random=135	44.4231032,39.5369484	22430	\N	2026-03-21 20:52:49.875179+00
-136	Гирей	girey	city	2	https://loremflickr.com/800/400/city,town,street?random=136	45.4024641,40.6581862	6441	\N	2026-03-21 20:52:49.875179+00
-137	Владимирская	vladimirskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=137	44.5446631,40.8043345	7217	\N	2026-03-21 20:52:49.875179+00
-138	Старомышастовская	staromyshastovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=138	45.3419471,39.0729692	10610	\N	2026-03-21 20:52:49.875179+00
-139	Гостагаевская	gostagaevskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=139	45.024044,37.502266	9772	\N	2026-03-21 20:52:49.875179+00
-140	Нововеличковская	novovelichkovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=140	45.2787805,38.8377083	9169	\N	2026-03-21 20:52:49.875179+00
-141	Ивановская	ivanovskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=141	45.2672191,38.4653294	9473	\N	2026-03-21 20:52:49.875179+00
-142	Старая Станица	staraya-stanitsa	city	2	https://loremflickr.com/800/400/city,town,street?random=142	45.0143064,41.1490284	7612	\N	2026-03-21 20:52:49.875179+00
-143	Красная Поляна	krasnaya-polyana	city	2	https://loremflickr.com/800/400/city,town,street?random=143	43.6779574,40.2069574	9165	\N	2026-03-21 20:52:49.875179+00
-144	Полтавская	poltavskaya	city	2	https://loremflickr.com/800/400/city,town,street?random=144	45.366794,38.2115057	26490	\N	2026-03-21 20:52:49.875179+00
-145	Сириус	sirius	city	2	https://loremflickr.com/800/400/city,town,street?random=145	43.4062071,39.9545377	\N	\N	2026-03-21 20:52:49.875179+00
+17	Туапсинский муниципальный округ	tuapsinskiy-munitsipalnyy-okrug	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.2686691,39.0958981	\N	\N	2026-03-21 20:52:33.744698+00
+18	городской округ Сочи	gorodskoy-okrug-sochi	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	43.7611586,39.9055726	\N	\N	2026-03-21 20:52:33.744698+00
+20	Ейский район	eyskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	46.440845,38.1621064	\N	\N	2026-03-21 20:52:33.744698+00
+21	Щербиновский район	scherbinovskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	46.6270554,38.6635572	\N	\N	2026-03-21 20:52:33.744698+00
+22	Староминский район	starominskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	46.500066,39.0339113	\N	\N	2026-03-21 20:52:33.744698+00
+23	Приморско-Ахтарский муниципальный округ	primorsko-ahtarskiy-munitsipalnyy-okrug	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.9658004,38.2458817	\N	\N	2026-03-21 20:52:33.744698+00
+24	Калининский район	kalininskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.5305453,38.3965172	\N	\N	2026-03-21 20:52:33.744698+00
+25	Тимашёвский район	timashyovskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.5674671,38.9780234	\N	\N	2026-03-21 20:52:33.744698+00
+26	Брюховецкий район	bryuhovetskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.8546073,39.0608558	\N	\N	2026-03-21 20:52:33.744698+00
+27	Кущёвский район	kuschyovskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	46.5645301,39.6863422	\N	\N	2026-03-21 20:52:33.744698+00
+28	Крыловский район	krylovskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	46.398871,40.0499186	\N	\N	2026-03-21 20:52:33.744698+00
+29	Каневской район	kanevskoy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	46.137344,39.0081287	\N	\N	2026-03-21 20:52:33.744698+00
+30	Ленинградский муниципальный округ	leningradskiy-munitsipalnyy-okrug	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	46.2259654,39.417124	\N	\N	2026-03-21 20:52:33.744698+00
+31	Лабинский район	labinskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.4408676,40.9405803	\N	\N	2026-03-21 20:52:33.744698+00
+32	Отрадненский район	otradnenskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.308353,41.3975382	\N	\N	2026-03-21 20:52:33.744698+00
+33	Успенский район	uspenskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.8334244,41.4054616	\N	\N	2026-03-21 20:52:33.744698+00
+34	городской округ Армавир	gorodskoy-okrug-armavir	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.9207619,41.0792476	\N	\N	2026-03-21 20:52:33.744698+00
+35	Новокубанский район	novokubanskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.8909105,41.086172	\N	\N	2026-03-21 20:52:33.744698+00
+36	Курганинский район	kurganinskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.9583917,40.5554569	\N	\N	2026-03-21 20:52:33.744698+00
+37	Гулькевичский район	gulkevichskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.2512851,40.6553703	\N	\N	2026-03-21 20:52:33.744698+00
+38	Кавказский район	kavkazskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.523757,40.5997104	\N	\N	2026-03-21 20:52:33.744698+00
+39	Белоглинский район	beloglinskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.9864011,40.9013374	\N	\N	2026-03-21 20:52:33.744698+00
+40	Новопокровский район	novopokrovskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.968912,40.6050434	\N	\N	2026-03-21 20:52:33.744698+00
+41	Павловский район	pavlovskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	46.0803824,39.9225048	\N	\N	2026-03-21 20:52:33.744698+00
+42	Кореновский район	korenovskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.5610498,39.3911936	\N	\N	2026-03-21 20:52:33.744698+00
+43	Тбилисский район	tbilisskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.3846998,40.1606622	\N	\N	2026-03-21 20:52:33.744698+00
+44	Тихорецкий район	tihoretskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.8283988,40.1901302	\N	\N	2026-03-21 20:52:33.744698+00
+45	Выселковский район	vyselkovskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.6643217,39.8382777	\N	\N	2026-03-21 20:52:33.744698+00
+46	Усть-Лабинский район	ust-labinskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.2697602,39.7456249	\N	\N	2026-03-21 20:52:33.744698+00
+47	городской округ Сириус	gorodskoy-okrug-sirius	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	43.4067304,39.9664535	\N	\N	2026-03-21 20:52:33.744698+00
+48	Краснодар	krasnodar	city	2	https://images.unsplash.com/photo-1578590strokes-8d1c3b6e8f3a?w=800&h=400&fit=crop	45.0351532,38.9772396	1154885	\N	2026-03-21 20:52:49.875179+00
+49	Славянск-на-Кубани	slavyansk-na-kubani	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.2590875,38.1244609	61449	\N	2026-03-21 20:52:49.875179+00
+50	Темрюк	temryuk	city	2	https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=400&fit=crop	45.2823609,37.3658235	39164	\N	2026-03-21 20:52:49.875179+00
+51	Анапа	anapa	city	2	https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&h=400&fit=crop	44.894272,37.316887	82695	\N	2026-03-21 20:52:49.875179+00
+52	Приморско-Ахтарск	primorsko-ahtarsk	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.0433467,38.1560033	30465	\N	2026-03-21 20:52:49.875179+00
+53	Ейск	eysk	city	2	https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=800&h=400&fit=crop	46.7112094,38.2747987	82534	\N	2026-03-21 20:52:49.875179+00
+54	Сочи	sochi	city	2	https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=800&h=400&fit=crop	43.5854823,39.723109	446599	\N	2026-03-21 20:52:49.875179+00
+55	Геленджик	gelendzhik	city	2	https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?w=800&h=400&fit=crop	44.5609447,38.0766832	80296	\N	2026-03-21 20:52:49.875179+00
+56	Кабардинка	kabardinka	city	2	https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=400&fit=crop	44.6515718,37.9395292	7550	\N	2026-03-21 20:52:49.875179+00
+57	Горячий Ключ	goryachiy-klyuch	city	2	https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=400&fit=crop	44.6342653,39.1363613	34585	\N	2026-03-21 20:52:49.875179+00
+58	Туапсе	tuapse	city	2	https://images.unsplash.com/photo-1468413253725-0d5181091126?w=800&h=400&fit=crop	44.0984747,39.0718875	60707	\N	2026-03-21 20:52:49.875179+00
+59	Новороссийск	novorossiysk	city	2	https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=400&fit=crop	44.7239578,37.7690711	261973	\N	2026-03-21 20:52:49.875179+00
+60	Армавир	armavir	city	2	https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&h=400&fit=crop	44.9993585,41.1294061	187215	\N	2026-03-21 20:52:49.875179+00
+61	Тимашёвск	timashyovsk	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.6129685,38.9357743	52641	\N	2026-03-21 20:52:49.875179+00
+62	Павловская	pavlovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.1352,39.783	\N	\N	2026-03-21 20:52:49.875179+00
+63	Витязево	vityazevo	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.9897066,37.2607195	7936	\N	2026-03-21 20:52:49.875179+00
+64	Джубга	dzhubga	city	2	https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&h=400&fit=crop	44.3170538,38.7043664	7024	\N	2026-03-21 20:52:49.875179+00
+65	Дагомыс	dagomys	city	2	https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&h=400&fit=crop	43.6590048,39.6544373	17841	\N	2026-03-21 20:52:49.875179+00
+66	Усть-Лабинск	ust-labinsk	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.2094926,39.6901178	42062	\N	2026-03-21 20:52:49.875179+00
+67	Васюринская	vasyurinskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.1183262,39.4200463	13339	\N	2026-03-21 20:52:49.875179+00
+68	Воронежская	voronezhskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.2120476,39.5670828	8562	\N	2026-03-21 20:52:49.875179+00
+69	Пластуновская	plastunovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.2962422,39.2662799	10264	\N	2026-03-21 20:52:49.875179+00
+70	Платнировская	platnirovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.391981,39.3903857	12004	\N	2026-03-21 20:52:49.875179+00
+71	Елизаветинская	elizavetinskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.0480573,38.7928963	24755	\N	2026-03-21 20:52:49.875179+00
+72	Новомышастовская	novomyshastovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.1987319,38.5795212	10032	\N	2026-03-21 20:52:49.875179+00
+73	Динская	dinskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.2168713,39.2249757	34848	\N	2026-03-21 20:52:49.875179+00
+74	Белореченск	belorechensk	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.7614149,39.8712943	52322	\N	2026-03-21 20:52:49.875179+00
+75	Выселки	vyselki	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.5806221,39.6574237	19426	\N	2026-03-21 20:52:49.875179+00
+76	Афипский	afipskiy	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.9040435,38.8426821	19956	\N	2026-03-21 20:52:49.875179+00
+77	Северская	severskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.853421,38.6781253	24867	\N	2026-03-21 20:52:49.875179+00
+78	Ильский	ilskiy	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.8458544,38.5608255	24831	\N	2026-03-21 20:52:49.875179+00
+79	Крымск	krymsk	city	2	https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&h=400&fit=crop	44.9295889,37.9880177	54420	\N	2026-03-21 20:52:49.875179+00
+80	Курганинск	kurganinsk	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.8851635,40.5894674	48194	\N	2026-03-21 20:52:49.875179+00
+81	Калининская	kalininskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.4856626,38.6598137	13391	\N	2026-03-21 20:52:49.875179+00
+82	Брюховецкая	bryuhovetskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.8006933,39.0006977	22024	\N	2026-03-21 20:52:49.875179+00
+83	Переясловская	pereyaslovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.844673,39.021858	8424	\N	2026-03-21 20:52:49.875179+00
+84	Каневская	kanevskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.0845999,38.9721929	41721	\N	2026-03-21 20:52:49.875179+00
+85	Стародеревянковская	staroderevyankovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.1277738,38.9713729	13482	\N	2026-03-21 20:52:49.875179+00
+86	Варениковская	varenikovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.121292,37.638737	14881	\N	2026-03-21 20:52:49.875179+00
+87	Старотитаровская	starotitarovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.2188185,37.1480059	12164	\N	2026-03-21 20:52:49.875179+00
+88	Тбилисская	tbilisskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.3635681,40.1898342	25317	\N	2026-03-21 20:52:49.875179+00
+89	Ладожская	ladozhskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.3076593,39.9268511	14828	\N	2026-03-21 20:52:49.875179+00
+90	Медвёдовская	medvyodovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.4525812,39.0167858	16793	\N	2026-03-21 20:52:49.875179+00
+1	Россия	russia	country	\N	https://images.unsplash.com/photo-1513326738677-b964603b136d?w=800&h=400&fit=crop	60.0,90.0	\N	\N	2026-03-21 20:50:38.711698+00
+2	Краснодарский край	krasnodarskiy-kray	region	1	https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop	44.77788090018502,40.06460274817761	5842238	Europe/Moscow	2026-03-21 20:50:38.711698+00
+3	городской округ Краснодар	gorodskoy-okrug-krasnodar	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.0937763,39.0164697	\N	\N	2026-03-21 20:52:33.744698+00
+4	Динской район	dinskoy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.2512976,39.0729717	\N	\N	2026-03-21 20:52:33.744698+00
+5	Красноармейский район	krasnoarmeyskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.3258944,38.4107362	\N	\N	2026-03-21 20:52:33.744698+00
+6	Северский район	severskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.7870953,38.7177143	\N	\N	2026-03-21 20:52:33.744698+00
+7	Абинский район	abinskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.8849241,38.2878967	\N	\N	2026-03-21 20:52:33.744698+00
+8	Славянский район	slavyanskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.4322275,37.8912155	\N	\N	2026-03-21 20:52:33.744698+00
+9	Крымский район	krymskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.9625269,37.8329466	\N	\N	2026-03-21 20:52:33.744698+00
+10	Темрюкский район	temryukskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.2643139,37.1537616	\N	\N	2026-03-21 20:52:33.744698+00
+11	муниципальный округ Анапа	munitsipalnyy-okrug-anapa	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.9513051,37.2719538	\N	\N	2026-03-21 20:52:33.744698+00
+12	городской округ Новороссийск	gorodskoy-okrug-novorossiysk	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.8305287,37.6731303	\N	\N	2026-03-21 20:52:33.744698+00
+13	городской округ Геленджик	gorodskoy-okrug-gelendzhik	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.5483408,38.2775379	\N	\N	2026-03-21 20:52:33.744698+00
+14	муниципальный округ Горячий Ключ	munitsipalnyy-okrug-goryachiy-klyuch	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.6128185,39.2430691	\N	\N	2026-03-21 20:52:33.744698+00
+15	Белореченский район	belorechenskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.7819868,39.7497583	\N	\N	2026-03-21 20:52:33.744698+00
+16	Апшеронский район	apsheronskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.3012439,39.6819443	\N	\N	2026-03-21 20:52:33.744698+00
+19	Мостовский район	mostovskiy-rayon	district	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.147479,40.6360521	\N	\N	2026-03-21 20:52:33.744698+00
+91	Холмская	holmskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.8432658,38.3950178	17585	\N	2026-03-21 20:52:49.875179+00
+92	Ахтырский	ahtyrskiy	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.8559341,38.2941737	20863	\N	2026-03-21 20:52:49.875179+00
+93	Абинск	abinsk	city	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	44.8649528,38.1578189	36986	\N	2026-03-21 20:52:49.875179+00
+94	Старощербиновская	staroscherbinovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.6284506,38.6624971	18010	\N	2026-03-21 20:52:49.875179+00
+95	Новотитаровская	novotitarovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.2360889,38.9712606	24754	\N	2026-03-21 20:52:49.875179+00
+96	Апшеронск	apsheronsk	city	2	https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&h=400&fit=crop	44.4674401,39.733173	40244	\N	2026-03-21 20:52:49.875179+00
+97	Тихорецк	tihoretsk	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.854679,40.128124	54582	\N	2026-03-21 20:52:49.875179+00
+98	Роговская	rogovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.734535,38.739555	7864	\N	2026-03-21 20:52:49.875179+00
+99	Новопокровская	novopokrovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.953815,40.707203	19684	\N	2026-03-21 20:52:49.875179+00
+100	Белая Глина	belaya-glina	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.0778137,40.8739482	17320	\N	2026-03-21 20:52:49.875179+00
+101	Архангельская	arhangelskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.6725524,40.2796117	8714	\N	2026-03-21 20:52:49.875179+00
+102	Нижнебаканская	nizhnebakanskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.8646355,37.8608578	8277	\N	2026-03-21 20:52:49.875179+00
+103	Анапская	anapskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.9002856,37.3832216	16107	\N	2026-03-21 20:52:49.875179+00
+104	Псебай	psebay	city	2	https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=800&h=400&fit=crop	44.1092655,40.7902989	10613	\N	2026-03-21 20:52:49.875179+00
+105	Лабинск	labinsk	city	2	https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&h=400&fit=crop	44.6347953,40.7242185	60971	\N	2026-03-21 20:52:49.875179+00
+106	Мостовской	mostovskoy	city	2	https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&h=400&fit=crop	44.4138041,40.7899446	25006	\N	2026-03-21 20:52:49.875179+00
+107	Архипо-Осиповка	arhipo-osipovka	city	2	https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&h=400&fit=crop	44.3703184,38.533611	7853	\N	2026-03-21 20:52:49.875179+00
+108	Новомихайловский	novomihaylovskiy	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.2533593,38.8447977	10792	\N	2026-03-21 20:52:49.875179+00
+109	Нефтегорск	neftegorsk	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.3555651,39.7034985	5188	\N	2026-03-21 20:52:49.875179+00
+110	Крыловская	krylovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.321865,39.962914	13621	\N	2026-03-21 20:52:49.875179+00
+111	Ленинградская	leningradskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.3212449,39.389554	36940	\N	2026-03-21 20:52:49.875179+00
+112	Новоминская	novominskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.317478,38.955532	11595	\N	2026-03-21 20:52:49.875179+00
+113	Кущёвская	kuschyovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.5650084,39.6273712	30200	\N	2026-03-21 20:52:49.875179+00
+114	Староминская	starominskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.5359488,39.0625056	29809	\N	2026-03-21 20:52:49.875179+00
+115	Михайловская	mihaylovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.990738,40.5999124	8245	\N	2026-03-21 20:52:49.875179+00
+116	Фастовецкая	fastovetskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.917324,40.154659	8573	\N	2026-03-21 20:52:49.875179+00
+117	Казанская	kazanskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.4074844,40.4406018	10991	\N	2026-03-21 20:52:49.875179+00
+118	Кавказская	kavkazskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.4393405,40.6697566	11164	\N	2026-03-21 20:52:49.875179+00
+119	Петровская	petrovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.430317,37.956711	13554	\N	2026-03-21 20:52:49.875179+00
+120	Новокубанск	novokubansk	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.1083184,41.0366896	35251	\N	2026-03-21 20:52:49.875179+00
+121	Гулькевичи	gulkevichi	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.3565119,40.6962256	34347	\N	2026-03-21 20:52:49.875179+00
+122	Советская	sovetskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.7836633,41.1711179	9021	\N	2026-03-21 20:52:49.875179+00
+123	Тамань	taman	city	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.2158646,36.7191326	10827	\N	2026-03-21 20:52:49.875179+00
+124	Марьянская	maryanskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.0991226,38.6367903	10643	\N	2026-03-21 20:52:49.875179+00
+125	Октябрьская	oktyabrskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	46.2837923,39.8102996	11252	\N	2026-03-21 20:52:49.875179+00
+126	Красносельский	krasnoselskiy	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.3934779,40.598473	7676	\N	2026-03-21 20:52:49.875179+00
+127	Успенское	uspenskoe	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.8346548,41.3850485	12409	\N	2026-03-21 20:52:49.875179+00
+128	Коноково	konokovo	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.8617355,41.325343	7880	\N	2026-03-21 20:52:49.875179+00
+129	Черноморский	chernomorskiy	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.849996,38.4944065	8512	\N	2026-03-21 20:52:49.875179+00
+130	Родниковская	rodnikovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.7685255,40.6579706	8346	\N	2026-03-21 20:52:49.875179+00
+131	Отрадная	otradnaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.3975687,41.5263169	23204	\N	2026-03-21 20:52:49.875179+00
+132	Кропоткин	kropotkin	city	2	https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&h=400&fit=crop	45.4344413,40.5750274	79795	\N	2026-03-21 20:52:49.875179+00
+133	Кореновск	korenovsk	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.4635863,39.4487565	41828	\N	2026-03-21 20:52:49.875179+00
+134	Старокорсунская	starokorsunskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.0506551,39.3130266	12238	\N	2026-03-21 20:52:49.875179+00
+135	Хадыженск	hadyzhensk	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.4231032,39.5369484	22430	\N	2026-03-21 20:52:49.875179+00
+136	Гирей	girey	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.4024641,40.6581862	6441	\N	2026-03-21 20:52:49.875179+00
+137	Владимирская	vladimirskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	44.5446631,40.8043345	7217	\N	2026-03-21 20:52:49.875179+00
+138	Старомышастовская	staromyshastovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.3419471,39.0729692	10610	\N	2026-03-21 20:52:49.875179+00
+139	Гостагаевская	gostagaevskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.024044,37.502266	9772	\N	2026-03-21 20:52:49.875179+00
+140	Нововеличковская	novovelichkovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.2787805,38.8377083	9169	\N	2026-03-21 20:52:49.875179+00
+141	Ивановская	ivanovskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.2672191,38.4653294	9473	\N	2026-03-21 20:52:49.875179+00
+142	Старая Станица	staraya-stanitsa	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.0143064,41.1490284	7612	\N	2026-03-21 20:52:49.875179+00
+143	Красная Поляна	krasnaya-polyana	city	2	https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&h=400&fit=crop	43.6779574,40.2069574	9165	\N	2026-03-21 20:52:49.875179+00
+144	Полтавская	poltavskaya	city	2	https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=400&fit=crop	45.366794,38.2115057	26490	\N	2026-03-21 20:52:49.875179+00
+145	Сириус	sirius	city	2	https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=800&h=400&fit=crop	43.4062071,39.9545377	\N	\N	2026-03-21 20:52:49.875179+00
 \.
 
 
@@ -4382,5 +4382,5 @@ ALTER TABLE ONLY public.weather_monthly
 -- PostgreSQL database dump complete
 --
 
-\unrestrict yEv9lEhoL5qAO7MDOW8fye32AXMAd5lycZPmtzPWq0RODhMMQgB55XoInfV4Pbl
+\unrestrict O3ESatQmOqDRkEehpz3VUc8gxuhBfkhVKwwMpTDabz4WSroKJXY5Ir4CJSJTEVT
 
