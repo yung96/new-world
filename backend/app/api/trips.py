@@ -348,3 +348,208 @@ async def get_trip_by_share(
     if not route:
         raise HTTPException(status_code=404, detail="Trip not found")
     return await _build_trip_response(route, db)
+
+
+@router.get(
+    "/{trip_id}/road",
+    summary="GeoJSON дорога между точками маршрута (OSRM)",
+)
+async def get_trip_road(
+    trip_id: int,
+    transport: str = "driving",
+    db: AsyncSession = Depends(get_db_session),
+):
+    """
+    Возвращает GeoJSON LineString по реальным дорогам.
+    transport: driving | walking | cycling
+    """
+    import httpx
+
+    route = await db.get(Route, trip_id)
+    if not route:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    # Collect waypoints
+    segments = (await db.execute(
+        select(RouteSegment).where(RouteSegment.route_id == trip_id).order_by(RouteSegment.position)
+    )).scalars().all()
+
+    coords = []
+    for seg in segments:
+        items = (await db.execute(
+            select(SegmentItem)
+            .where(SegmentItem.segment_id == seg.id, SegmentItem.type == "experience", SegmentItem.parent_id.isnot(None))
+            .order_by(SegmentItem.position)
+        )).scalars().all()
+        for item in items:
+            d = json.loads(item.details) if isinstance(item.details, str) else (item.details or {})
+            lat, lng = d.get("lat"), d.get("lng")
+            if lat and lng and not d.get("recommendation_type"):
+                coords.append(f"{lng},{lat}")
+
+    if len(coords) < 2:
+        return {"type": "FeatureCollection", "features": []}
+
+    # OSRM
+    profile = {"driving": "driving", "walking": "foot", "cycling": "bicycle"}.get(transport, "driving")
+    osrm_coords = ";".join(coords)
+    osrm_url = f"https://router.project-osrm.org/route/v1/{profile}/{osrm_coords}?overview=full&geometries=geojson"
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(osrm_url)
+            resp.raise_for_status()
+            data = resp.json()
+
+        if data.get("routes"):
+            geometry = data["routes"][0]["geometry"]
+            distance_m = data["routes"][0].get("distance", 0)
+            duration_s = data["routes"][0].get("duration", 0)
+
+            return {
+                "geometry": geometry,
+                "distance_km": round(distance_m / 1000, 1),
+                "duration_min": round(duration_s / 60),
+                "waypoints": [[float(c.split(",")[1]), float(c.split(",")[0])] for c in coords],
+                "transport": transport,
+            }
+    except Exception as e:
+        # Fallback: прямые линии
+        pass
+
+    # Fallback
+    return {
+        "geometry": {
+            "type": "LineString",
+            "coordinates": [[float(c.split(",")[0]), float(c.split(",")[1])] for c in coords],
+        },
+        "distance_km": None,
+        "duration_min": None,
+        "waypoints": [[float(c.split(",")[1]), float(c.split(",")[0])] for c in coords],
+        "transport": transport,
+        "source": "fallback",
+    }
+
+
+@router.get(
+    "/{trip_id}/schedule",
+    summary="Расписание маршрута — что делать, когда, сколько времени",
+)
+async def get_trip_schedule(
+    trip_id: int,
+    db: AsyncSession = Depends(get_db_session),
+):
+    route = await db.get(Route, trip_id)
+    if not route:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    params = route.params or {}
+    segments = (await db.execute(
+        select(RouteSegment).where(RouteSegment.route_id == trip_id).order_by(RouteSegment.position)
+    )).scalars().all()
+
+    days = []
+    for seg in segments:
+        day_items = (await db.execute(
+            select(SegmentItem).where(SegmentItem.segment_id == seg.id, SegmentItem.type == "day")
+            .order_by(SegmentItem.position)
+        )).scalars().all()
+
+        for day_item in day_items:
+            day_d = json.loads(day_item.details) if isinstance(day_item.details, str) else (day_item.details or {})
+
+            exps = (await db.execute(
+                select(SegmentItem).where(SegmentItem.parent_id == day_item.id).order_by(SegmentItem.position)
+            )).scalars().all()
+
+            activities = []
+            recommendations = []
+
+            for exp in exps:
+                d = json.loads(exp.details) if isinstance(exp.details, str) else (exp.details or {})
+
+                if d.get("recommendation_type"):
+                    recommendations.append({
+                        "type": d["recommendation_type"],
+                        "options": d.get("options", []),
+                    })
+                else:
+                    activities.append({
+                        "time": d.get("time"),
+                        "name": d.get("name", ""),
+                        "description": d.get("description"),
+                        "durationMin": d.get("duration_min"),
+                        "lat": d.get("lat"),
+                        "lng": d.get("lng"),
+                        "postId": d.get("post_id"),
+                        "distanceToNextKm": d.get("distance_to_next_km"),
+                        "durationToNextMin": d.get("duration_to_next_min"),
+                        "transportToNext": d.get("transport_to_next"),
+                    })
+
+            days.append({
+                "dayNumber": day_d.get("day_number"),
+                "date": day_d.get("date") or (seg.date_from.isoformat() if seg.date_from else None),
+                "title": seg.title,
+                "activitiesCount": len(activities),
+                "totalDurationMin": sum(a.get("durationMin") or 0 for a in activities),
+                "activities": activities,
+                "recommendations": recommendations,
+            })
+
+    weather_per_day = params.get("weatherPerDay", [])
+
+    # AI tips for activities
+    ai_tips = None
+    try:
+        from app.core.config import settings
+        key = getattr(settings, "GPT_CLIENT_KEY", None) or ""
+        if key and key.lower() not in ("", "fake", "x"):
+            from app.services.gpt_service import GptService
+            ctx = json.dumps({
+                "days": [
+                    {"day": d["dayNumber"], "activities": [a["name"] for a in d["activities"]]}
+                    for d in days
+                ],
+                "weather": weather_per_day[:3] if weather_per_day else [],
+                "group": params.get("groupType", "solo"),
+            }, ensure_ascii=False)
+            prompt = (
+                "Дай короткий совет (1 предложение) к каждой активности маршрута. "
+                "Формат: JSON массив [{\"name\": \"...\", \"tip\": \"...\"}]. "
+                "Советы практичные: что взять, во сколько лучше, на что обратить внимание. "
+                "Контекст:\n" + ctx
+            )
+            gpt = GptService()
+            try:
+                raw = await gpt.request_openai_text_response(
+                    sys_prompt="Ты — местный гид по Краснодарскому краю.",
+                    user_prompt=prompt,
+                    max_tokens=800,
+                )
+                if raw:
+                    # Parse JSON from response
+                    import re
+                    match = re.search(r'\[.*\]', raw, re.DOTALL)
+                    if match:
+                        ai_tips = json.loads(match.group())
+            finally:
+                await gpt.close()
+    except Exception:
+        pass
+
+    # Merge tips into activities
+    if ai_tips:
+        tip_map = {t["name"]: t["tip"] for t in ai_tips if "name" in t and "tip" in t}
+        for day in days:
+            for act in day["activities"]:
+                act["aiTip"] = tip_map.get(act["name"])
+
+    return {
+        "tripId": trip_id,
+        "title": route.title,
+        "totalDays": len(days),
+        "totalKm": params.get("total_km"),
+        "weather": weather_per_day,
+        "days": days,
+    }
