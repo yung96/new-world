@@ -319,7 +319,54 @@ async def get_map_points(
         "districts": districts,
         "cities": cities,
         "places": places,
+        "routes": await _get_map_routes(db),
     }
+
+
+async def _get_map_routes(db: AsyncSession) -> list[dict]:
+    """Ready routes with polylines for map overlay."""
+    import json
+    from app.models.route import Route, RouteSegment, SegmentItem
+
+    routes_res = await db.execute(
+        select(Route).where(Route.status == "ready").order_by(Route.created_at.desc()).limit(20)
+    )
+    routes = routes_res.scalars().all()
+
+    result = []
+    for route in routes:
+        items = (await db.execute(
+            select(SegmentItem)
+            .join(RouteSegment)
+            .where(
+                RouteSegment.route_id == route.id,
+                SegmentItem.type == "experience",
+                SegmentItem.parent_id.isnot(None),
+            )
+            .order_by(RouteSegment.position, SegmentItem.position)
+        )).scalars().all()
+
+        coords = []
+        for item in items:
+            d = json.loads(item.details) if isinstance(item.details, str) else (item.details or {})
+            lat, lng = d.get("lat"), d.get("lng")
+            if lat and lng and not d.get("recommendation_type"):
+                coords.append([lat, lng])
+
+        if len(coords) < 2:
+            continue
+
+        result.append({
+            "id": route.id,
+            "title": route.title,
+            "shareToken": route.share_token,
+            "totalDays": route.total_days,
+            "totalExperiences": route.total_experiences,
+            "status": route.status.value if hasattr(route.status, "value") else str(route.status),
+            "polyline": coords,
+        })
+
+    return result
 
 
 # ── User presets CRUD ────────────────────────────────────────────────────────
