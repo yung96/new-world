@@ -226,6 +226,20 @@ async def _build_trip_response(route: Route, db: AsyncSession) -> dict:
             "blocks": blocks,
         })
 
+    # Collect polyline from all experiences
+    polyline = []
+    for seg in segments:
+        items = (await db.execute(
+            select(SegmentItem)
+            .where(SegmentItem.segment_id == seg.id, SegmentItem.type == "experience", SegmentItem.parent_id.isnot(None))
+            .order_by(SegmentItem.position)
+        )).scalars().all()
+        for item in items:
+            d = json.loads(item.details) if isinstance(item.details, str) else (item.details or {})
+            lat, lng = d.get("lat"), d.get("lng")
+            if lat and lng and not d.get("recommendation_type"):
+                polyline.append([lat, lng])
+
     # Pricing
     total_price = route.total_price or 0
 
@@ -245,8 +259,9 @@ async def _build_trip_response(route: Route, db: AsyncSession) -> dict:
         "group_type": params.get("groupType", "solo"),
         "currency": "RUB",
         "destinations": destinations,
-        "hero_images": [],  # TODO: collect from segment photos
+        "hero_images": [],
         "narrative": route.narrative,
+        "polyline": polyline,
         "share_token": route.share_token,
         "weather": weather,
         "events": events,
