@@ -73,20 +73,40 @@ async def step_scoring(route_id: int, params: dict[str, Any]) -> None:
         stmt = stmt.options(selectinload(Post.interests)).limit(500)
         posts = (await db.execute(stmt)).scalars().all()
 
-        # Score by interest match + season
+        # Map filter interests to DB interest names
+        interest_name_map = {
+            "gastro": "гастро", "wine": "вино", "eco": "эко",
+            "nature": "природа", "culture": "культура", "relax": "отдых",
+            "active": "активность", "workation": "workation",
+        }
+        wanted = {interest_name_map.get(i, i).lower() for i in interests}
+
+        # Score by interest match + text match + season
         scored = []
         for p in posts:
-            post_interests = {i.name.lower() for i in p.interests}
+            post_interest_names = {i.name.lower() for i in p.interests}
             post_desc = (p.description or "").lower()
+            post_title = (p.title or "").lower()
             score = 0
+
+            # Direct interest match (strongest signal)
+            matched = wanted & post_interest_names
+            score += len(matched) * 20
+
+            # Text match in description/title
             for term in search_terms:
-                if term.lower() in post_interests or term.lower() in post_desc:
-                    score += 10
+                t = term.lower()
+                if t in post_desc or t in post_title:
+                    score += 5
+
+            # Season bonus
             if str(p.season) == season:
-                score += 5
-            # Exclude generic food from main points (goes to recommendations)
-            if p.description in ("Ресторан", "Кафе", "Автозаправочная станция"):
-                score -= 20
+                score += 3
+
+            # Every post with at least one interest gets a base score
+            if post_interest_names:
+                score += 2
+
             scored.append((score, p))
 
         scored.sort(key=lambda x: -x[0])
@@ -140,8 +160,11 @@ async def step_scoring(route_id: int, params: dict[str, Any]) -> None:
             db.add(day_item)
             await db.flush()
 
-            # Experiences inside day
+            # Experiences inside day with auto-time
+            START_HOUR = 9
             for i, p in enumerate(day_posts):
+                hour = START_HOUR + i * 2  # every 2 hours
+                time_str = f"{hour:02d}:00"
                 db.add(SegmentItem(
                     segment_id=seg.id,
                     parent_id=day_item.id,
@@ -153,6 +176,8 @@ async def step_scoring(route_id: int, params: dict[str, Any]) -> None:
                         "lng": p.geo_lng,
                         "post_id": p.id,
                         "description": p.description,
+                        "time": time_str,
+                        "duration_min": 90,
                     }),
                 ))
 
