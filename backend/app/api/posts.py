@@ -23,6 +23,11 @@ class PostCreateRequest(BasePydanticModel):
     geoLng: float | None = Field(default=None, ge=-180, le=180)
     interestIds: list[int] = Field(default_factory=list)
     season: Season = Season.spring
+    photos: list[str] = Field(
+        default_factory=list,
+        max_length=20,
+        description="URL картинок после POST /api/upload (пути вида /api/uploads/...).",
+    )
 
 
 class PostUpdateRequest(BasePydanticModel):
@@ -124,6 +129,8 @@ async def create_post(
         geo_lng=payload.geoLng,
         season=payload.season,
         interest_ids=payload.interestIds,
+        region_id=payload.regionId,
+        photo_urls=payload.photos,
     )
     post, avg_rating = await _service(db).get_post_or_404(created.id)
     return _to_response(post, avg_rating)

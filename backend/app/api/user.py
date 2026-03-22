@@ -208,6 +208,8 @@ async def user_create_post(
         geo_lng=payload.geoLng,
         season=payload.season,
         interest_ids=payload.interestIds,
+        region_id=payload.regionId,
+        photo_urls=payload.photos,
     )
     post, avg_rating = await _service(db).get_post_or_404(created.id)
     return _to_post_response(post, avg_rating)

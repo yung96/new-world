@@ -9,7 +9,9 @@ from app.models.associations import UserPlaceStatus
 from app.models.interest import Interest
 from app.models.post import Post, Season
 from app.models.review import Review
+from app.models.schedule import PostMedia
 from app.models.user import User
+from app.services.post_media_utils import validate_and_normalize_post_photos
 from app.services.social_service import SocialService
 
 
@@ -28,8 +30,11 @@ class PostService:
         geo_lng: float | None,
         season: Season,
         interest_ids: list[int],
+        region_id: int | None = None,
+        photo_urls: list[str] | None = None,
     ) -> Post:
         interests = await self._load_interests(interest_ids)
+        validated_photos = validate_and_normalize_post_photos(photo_urls)
         post = Post(
             author_id=author.id,
             title=title.strip(),
@@ -38,11 +43,19 @@ class PostService:
             geo_lat=geo_lat,
             geo_lng=geo_lng,
             season=season,
+            region_id=region_id,
             interests=interests,
         )
         self.db.add(post)
         await self.db.commit()
         await self.db.refresh(post)
+        for position, url in enumerate(validated_photos):
+            self.db.add(
+                PostMedia(post_id=post.id, url=url, position=position)
+            )
+        if validated_photos:
+            await self.db.commit()
+            await self.db.refresh(post)
         return post
 
     async def list_posts(

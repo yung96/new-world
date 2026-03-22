@@ -1,4 +1,12 @@
+from app.api.uploads import UPLOAD_DIR
 from app.models.post import Season
+
+
+def _clear_upload_dir() -> None:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    for path in UPLOAD_DIR.iterdir():
+        if path.is_file():
+            path.unlink()
 
 
 async def _auth_headers(client, phone: str) -> dict[str, str]:
@@ -195,3 +203,51 @@ async def test_posts_average_rating_is_calculated(client):
     items = list_resp.json()["items"]
     target = next(item for item in items if item["id"] == post_id)
     assert target["averageRating"] == 4.0
+
+
+async def test_user_create_post_persists_photos(client):
+    _clear_upload_dir()
+    content = b"\x89PNG\r\n\x1a\nfake"
+    upload_resp = await client.post(
+        "/api/upload",
+        files={"file": ("cover.png", content, "image/png")},
+    )
+    assert upload_resp.status_code == 200
+    url = upload_resp.json()["url"]
+
+    headers = await _auth_headers(client, "+70000000099")
+    create_resp = await client.post(
+        "/api/user/posts",
+        json={
+            "title": "Место с обложкой",
+            "description": "Описание",
+            "interestIds": [],
+            "season": Season.summer.value,
+            "photos": [url],
+        },
+        headers=headers,
+    )
+    assert create_resp.status_code == 201
+    data = create_resp.json()
+    assert data["photos"] == [url]
+
+    get_resp = await client.get(f"/api/posts/{data['id']}")
+    assert get_resp.status_code == 200
+    assert get_resp.json()["photos"] == [url]
+
+    _clear_upload_dir()
+
+
+async def test_user_create_post_rejects_missing_upload_file(client):
+    headers = await _auth_headers(client, "+70000000100")
+    resp = await client.post(
+        "/api/user/posts",
+        json={
+            "title": "Без файла",
+            "interestIds": [],
+            "season": Season.winter.value,
+            "photos": ["/api/uploads/definitely-missing-uuid-xxx.png"],
+        },
+        headers=headers,
+    )
+    assert resp.status_code == 400
