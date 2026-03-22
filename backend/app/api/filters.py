@@ -28,6 +28,8 @@ class FilterConfigOut(BaseModel):
     paceOptions: list[FilterOptionOut]
     interests: list[FilterOptionOut]
     seasons: list[FilterOptionOut]
+    pinTypes: list[FilterOptionOut]
+    placeTypes: list[FilterOptionOut]
 
 
 FILTER_CONFIG = FilterConfigOut(
@@ -69,6 +71,32 @@ FILTER_CONFIG = FilterConfigOut(
         FilterOptionOut(value="summer", label="Лето"),
         FilterOptionOut(value="autumn", label="Осень"),
         FilterOptionOut(value="winter", label="Зима"),
+    ],
+    pinTypes=[
+        FilterOptionOut(value="city", label="Город"),
+        FilterOptionOut(value="stay", label="Отель / ночлег"),
+        FilterOptionOut(value="experience", label="Достопримечательность"),
+        FilterOptionOut(value="transport_hub", label="Вокзал / аэропорт"),
+        FilterOptionOut(value="photo_spot", label="Фототочка"),
+        FilterOptionOut(value="food", label="Кафе / ресторан"),
+        FilterOptionOut(value="custom", label="Своя метка"),
+    ],
+    placeTypes=[
+        FilterOptionOut(value="attraction", label="Достопримечательность"),
+        FilterOptionOut(value="restaurant", label="Ресторан"),
+        FilterOptionOut(value="cafe", label="Кафе"),
+        FilterOptionOut(value="hotel", label="Гостиница"),
+        FilterOptionOut(value="winery", label="Винодельня"),
+        FilterOptionOut(value="beach", label="Пляж"),
+        FilterOptionOut(value="waterfall", label="Водопад"),
+        FilterOptionOut(value="viewpoint", label="Смотровая площадка"),
+        FilterOptionOut(value="museum", label="Музей"),
+        FilterOptionOut(value="camping", label="Кемпинг"),
+        FilterOptionOut(value="farm", label="Ферма"),
+        FilterOptionOut(value="park", label="Парк"),
+        FilterOptionOut(value="excursion", label="Экскурсия"),
+        FilterOptionOut(value="event", label="Мероприятие"),
+        FilterOptionOut(value="fuel", label="Заправка"),
     ],
 )
 
