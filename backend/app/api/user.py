@@ -54,6 +54,7 @@ def _to_post_response(post, avg_rating: float | None) -> PostResponse:
         bestAngle=post.best_angle,
         verified=post.verified,
         interestIds=[interest.id for interest in post.interests],
+        photos=[m.url for m in post.media] if hasattr(post, 'media') and post.media else [],
         season=post.season,
         averageRating=(round(float(avg_rating), 2) if avg_rating is not None else None),
         reviewsCount=post.reviews_count,

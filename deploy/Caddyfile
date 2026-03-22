@@ -8,6 +8,11 @@ apikraeved.tw1.su {
     reverse_proxy kraeved_api:8000 {
         header_up X-Forwarded-Proto {scheme}
         header_up Host {host}
+        # E2E /ivan-alt/local-routes/test-run и LLM могут отвечать долго — иначе обрыв «сеть потеряна»
+        transport http {
+            read_timeout 300s
+            write_timeout 300s
+        }
     }
 }
 
@@ -19,6 +24,10 @@ apikraeved.tw1.su {
         reverse_proxy api:8000 {
             header_up X-Forwarded-Proto {scheme}
             header_up Host {host}
+            transport http {
+                read_timeout 300s
+                write_timeout 300s
+            }
         }
     }
 

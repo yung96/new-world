@@ -13,7 +13,9 @@ from app.core.dependencies import get_db_session
 from app.models.achievement import Achievement
 from app.models.associations import user_achievements
 from app.models.interest import Interest
+from app.models.associations import user_interests
 from app.models.review import Review
+from app.models.route import Route
 from app.models.user import User
 from app.services.achievement_progress_service import AchievementProgressService
 from app.services.auth_service import AuthService
@@ -256,3 +258,81 @@ async def get_public_user_profile(
         page=page,
         pageSize=pageSize,
     )
+
+
+# --- Profile endpoints ---
+
+
+@router.get(
+    "/users/me/interests",
+    summary="Мои интересы",
+)
+async def get_my_interests(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    stmt = (
+        select(Interest)
+        .join(user_interests, user_interests.c.interest_id == Interest.id)
+        .where(user_interests.c.user_id == current_user.id)
+    )
+    result = await db.execute(stmt)
+    interests = result.scalars().all()
+    return [
+        {"id": i.id, "name": i.name, "emoji": i.emoji}
+        for i in interests
+    ]
+
+
+@router.get(
+    "/users/me/routes",
+    summary="Мои маршруты",
+)
+async def get_my_routes(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    stmt = (
+        select(Route)
+        .where(Route.author_id == current_user.id)
+        .order_by(Route.created_at.desc())
+    )
+    result = await db.execute(stmt)
+    routes = result.scalars().all()
+    return [
+        {
+            "id": r.id,
+            "title": r.title,
+            "status": r.status.value if hasattr(r.status, "value") else str(r.status),
+            "totalDays": r.total_days,
+            "totalExperiences": r.total_experiences,
+            "totalPrice": r.total_price,
+            "shareToken": r.share_token,
+            "createdAt": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in routes
+    ]
+
+
+@router.patch(
+    "/users/me",
+    summary="Обновить профиль",
+)
+async def update_me(
+    body: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_session),
+):
+    allowed = {"name", "avatar_url", "bio"}
+    for key, val in body.items():
+        if key in allowed:
+            setattr(current_user, key, val)
+    await db.commit()
+    await db.refresh(current_user)
+    return {
+        "id": current_user.id,
+        "phone": current_user.phone,
+        "name": current_user.name,
+        "avatarUrl": current_user.avatar_url,
+        "bio": current_user.bio,
+    }

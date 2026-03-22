@@ -26,7 +26,7 @@ RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
 
-# Entrypoint запускает миграции, затем передаёт управление CMD
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Запуск через shell: при bind-mount ./backend:/app хостовый entrypoint часто без +x — иначе "permission denied"
+ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
 
 # CMD задан в docker-compose: uvicorn main:app
