@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 7adqeDySmF3vgpj6QiSJNWDap2u0moiFaXyJcseAwOZWXGpuoPRrneGwUoCai7B
+\restrict yEv9lEhoL5qAO7MDOW8fye32AXMAd5lycZPmtzPWq0RODhMMQgB55XoInfV4Pbl
 
 -- Dumped from database version 15.17 (Debian 15.17-1.pgdg13+1)
 -- Dumped by pg_dump version 18.2
@@ -2193,26 +2193,36 @@ COPY public.post_interests (post_id, interest_id) FROM stdin;
 --
 
 COPY public.post_media (id, post_id, url, alt, "position", created_at) FROM stdin;
-1469	524	https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800	Абрау-Дюрсо	0	2026-03-22 00:47:20.253676+00
-1470	524	https://images.unsplash.com/photo-1474722883778-792e7990302f?w=800	Абрау-Дюрсо	1	2026-03-22 00:47:20.253676+00
-1471	525	https://images.unsplash.com/photo-1551524559-8af4e6624178?w=800	Skypark AJ Hackett Сочи	0	2026-03-22 00:47:20.253676+00
-1472	525	https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800	Skypark AJ Hackett Сочи	1	2026-03-22 00:47:20.253676+00
-1473	526	https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800	Парк Галицкого	0	2026-03-22 00:47:20.253676+00
-1474	526	https://images.unsplash.com/photo-1588714477688-cf28a50e94f7?w=800	Парк Галицкого	1	2026-03-22 00:47:20.253676+00
-1475	527	https://images.unsplash.com/photo-1432405972618-c6b0cfba575b?w=800	33 водопада	0	2026-03-22 00:47:20.253676+00
-1476	527	https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=800	33 водопада	1	2026-03-22 00:47:20.253676+00
-1477	528	https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800	Винодельня Лефкадия	0	2026-03-22 00:47:20.253676+00
-1478	528	https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800	Винодельня Лефкадия	1	2026-03-22 00:47:20.253676+00
-1479	529	https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800	Роза Хутор	0	2026-03-22 00:47:20.253676+00
-1480	529	https://images.unsplash.com/photo-1486911278844-a81c5267e227?w=800	Роза Хутор	1	2026-03-22 00:47:20.253676+00
-1481	530	https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800	Кипарисовое озеро	0	2026-03-22 00:47:20.253676+00
-1482	530	https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800	Кипарисовое озеро	1	2026-03-22 00:47:20.253676+00
-1483	531	https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800	Гуамское ущелье	0	2026-03-22 00:47:20.253676+00
-1484	531	https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800	Гуамское ущелье	1	2026-03-22 00:47:20.253676+00
-1485	532	https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=800	Ферма Экзархо	0	2026-03-22 00:47:20.253676+00
-1486	532	https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=800	Ферма Экзархо	1	2026-03-22 00:47:20.253676+00
-1487	533	https://images.unsplash.com/photo-1585007600263-dbc7e6a65920?w=800	Старый парк в Кабардинке	0	2026-03-22 00:47:20.253676+00
-1488	533	https://images.unsplash.com/photo-1533587851505-d119e13fa0d7?w=800	Старый парк в Кабардинке	1	2026-03-22 00:47:20.253676+00
+1489	524	https://images.unsplash.com/photo-1560493676-04071c5f467b?w=800&h=600&fit=crop	Абрау-Дюрсо виноградники	0	2026-03-22 00:49:46.953776+00
+1490	524	https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?w=800&h=600&fit=crop	Дегустация вин	1	2026-03-22 00:49:46.953776+00
+1491	524	https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=800&h=600&fit=crop	Озеро Абрау	2	2026-03-22 00:49:46.953776+00
+1492	525	https://images.unsplash.com/photo-1540979388789-6cee28a1cdc9?w=800&h=600&fit=crop	Подвесной мост	0	2026-03-22 00:49:46.953776+00
+1493	525	https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&h=600&fit=crop	Ущелье	1	2026-03-22 00:49:46.953776+00
+1494	525	https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&h=600&fit=crop	Горы Сочи	2	2026-03-22 00:49:46.953776+00
+1495	526	https://images.unsplash.com/photo-1588714477688-cf28a50e94f7?w=800&h=600&fit=crop	Парк Галицкого	0	2026-03-22 00:49:46.953776+00
+1496	526	https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&h=600&fit=crop	Террасы парка	1	2026-03-22 00:49:46.953776+00
+1497	526	https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&h=600&fit=crop	Вечерняя подсветка	2	2026-03-22 00:49:46.953776+00
+1498	527	https://images.unsplash.com/photo-1432405972618-c6b0cfba575b?w=800&h=600&fit=crop	Водопад	0	2026-03-22 00:49:46.953776+00
+1499	527	https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=800&h=600&fit=crop	Каскад	1	2026-03-22 00:49:46.953776+00
+1500	527	https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=800&h=600&fit=crop	Тропа к водопаду	2	2026-03-22 00:49:46.953776+00
+1501	528	https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=800&h=600&fit=crop	Виноградники	0	2026-03-22 00:49:46.953776+00
+1502	528	https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=800&h=600&fit=crop	Бокал вина	1	2026-03-22 00:49:46.953776+00
+1503	528	https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=800&h=600&fit=crop	Сыроварня	2	2026-03-22 00:49:46.953776+00
+1504	529	https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&h=600&fit=crop	Горы зимой	0	2026-03-22 00:49:46.953776+00
+1505	529	https://images.unsplash.com/photo-1486911278844-a81c5267e227?w=800&h=600&fit=crop	Горнолыжный склон	1	2026-03-22 00:49:46.953776+00
+1506	529	https://images.unsplash.com/photo-1548587143-53e00bffb425?w=800&h=600&fit=crop	Набережная	2	2026-03-22 00:49:46.953776+00
+1507	530	https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800&h=600&fit=crop	Кипарисы в воде	0	2026-03-22 00:49:46.953776+00
+1508	530	https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop	Рассвет на озере	1	2026-03-22 00:49:46.953776+00
+1509	530	https://images.unsplash.com/photo-1518173946687-a9e7e1e3eb3c?w=800&h=600&fit=crop	Отражение	2	2026-03-22 00:49:46.953776+00
+1510	531	https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&h=600&fit=crop	Ущелье	0	2026-03-22 00:49:46.953776+00
+1511	531	https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=800&h=600&fit=crop	Скалы	1	2026-03-22 00:49:46.953776+00
+1512	531	https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&h=600&fit=crop	Горная река	2	2026-03-22 00:49:46.953776+00
+1513	532	https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=800&h=600&fit=crop	Ферма	0	2026-03-22 00:49:46.953776+00
+1514	532	https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=800&h=600&fit=crop	Козий сыр	1	2026-03-22 00:49:46.953776+00
+1515	532	https://images.unsplash.com/photo-1550583724-b2692b85b150?w=800&h=600&fit=crop	Мастер-класс	2	2026-03-22 00:49:46.953776+00
+1516	533	https://images.unsplash.com/photo-1585007600263-dbc7e6a65920?w=800&h=600&fit=crop	Архитектура парка	0	2026-03-22 00:49:46.953776+00
+1517	533	https://images.unsplash.com/photo-1533587851505-d119e13fa0d7?w=800&h=600&fit=crop	Японский сад	1	2026-03-22 00:49:46.953776+00
+1518	533	https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&h=600&fit=crop	Замок	2	2026-03-22 00:49:46.953776+00
 \.
 
 
@@ -2977,7 +2987,7 @@ SELECT pg_catalog.setval('public.place_schedules_id_seq', 1, false);
 -- Name: post_media_id_seq; Type: SEQUENCE SET; Schema: public; Owner: kraeved_user
 --
 
-SELECT pg_catalog.setval('public.post_media_id_seq', 1488, true);
+SELECT pg_catalog.setval('public.post_media_id_seq', 1518, true);
 
 
 --
@@ -4372,5 +4382,5 @@ ALTER TABLE ONLY public.weather_monthly
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 7adqeDySmF3vgpj6QiSJNWDap2u0moiFaXyJcseAwOZWXGpuoPRrneGwUoCai7B
+\unrestrict yEv9lEhoL5qAO7MDOW8fye32AXMAd5lycZPmtzPWq0RODhMMQgB55XoInfV4Pbl
 
