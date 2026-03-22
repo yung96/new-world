@@ -228,6 +228,7 @@ _IVAN_ALT_TEST_PANEL_HTML = """
       <div class="row">
         <label><input type="checkbox" id="skipLlm" /> skipLlm — без вызова нейросети (черновик)</label>
       </div>
+      <p class="muted" style="margin-top:10px">Если в браузере «сеть потеряна» при живом API — часто таймаут прокси на длинном LLM; сначала прогони с галкой skipLlm или подними read_timeout у Caddy/nginx.</p>
       <br/>
       <button class="primary" type="button" id="go">Один клик: юзер + карточки + генерация</button>
     </div>
