@@ -231,59 +231,82 @@ async def get_map_points(
     from app.models.post import Post
     from app.models.schedule import PostMedia
 
+    from sqlalchemy.orm import selectinload
+    from sqlalchemy import func as sa_func
+    from app.models.post import Post
+
     if zoom < 8:
-        # Районы
-        result = await db.execute(
-            select(GeoRegion).where(GeoRegion.type == "district")
-        )
+        # Районы + кол-во мест
+        result = await db.execute(select(GeoRegion).where(GeoRegion.type == "district"))
         regions = result.scalars().all()
+        counts = {}
+        cnt_res = await db.execute(
+            select(Post.region_id, sa_func.count(Post.id)).where(Post.region_id.isnot(None)).group_by(Post.region_id)
+        )
+        for rid, cnt in cnt_res.all():
+            counts[rid] = cnt
+
         return {
             "level": "district",
             "points": [
                 {
                     "id": r.id,
                     "name": r.name,
+                    "slug": r.slug,
                     "type": "district",
                     "centroid": r.centroid,
                     "photo": r.polygon,
+                    "population": r.population,
+                    "placesCount": counts.get(r.id, 0),
+                    "description": CITY_INFO.get(r.name, {}).get("desc"),
                 }
                 for r in regions if r.centroid
             ],
         }
 
     elif zoom < 12:
-        # Города
-        result = await db.execute(
-            select(GeoRegion).where(GeoRegion.type == "city")
-        )
+        # Города + кол-во мест + инфо
+        result = await db.execute(select(GeoRegion).where(GeoRegion.type == "city"))
         cities = result.scalars().all()
+        counts = {}
+        cnt_res = await db.execute(
+            select(Post.region_id, sa_func.count(Post.id)).where(Post.region_id.isnot(None)).group_by(Post.region_id)
+        )
+        for rid, cnt in cnt_res.all():
+            counts[rid] = cnt
+
         return {
             "level": "city",
             "points": [
                 {
                     "id": c.id,
                     "name": c.name,
+                    "slug": c.slug,
                     "type": "city",
                     "centroid": c.centroid,
                     "photo": c.polygon,
                     "population": c.population,
+                    "placesCount": counts.get(c.id, 0),
+                    "description": CITY_INFO.get(c.name, {}).get("desc"),
+                    "avgPricePerDay": CITY_INFO.get(c.name, {}).get("avgPrice"),
                 }
                 for c in cities if c.centroid
             ],
         }
 
     else:
-        # Конкретные места
-        from sqlalchemy.orm import selectinload
-        stmt = select(Post).where(Post.geo_lat.isnot(None)).options(selectinload(Post.media))
-
+        # Места — полная инфа
+        stmt = (
+            select(Post)
+            .where(Post.geo_lat.isnot(None))
+            .options(selectinload(Post.media), selectinload(Post.interests))
+        )
         if lat and lng:
-            delta = 0.5  # ~50km
+            delta = 0.5
             stmt = stmt.where(
                 Post.geo_lat.between(lat - delta, lat + delta),
                 Post.geo_lng.between(lng - delta, lng + delta),
             )
-
         stmt = stmt.limit(100)
         result = await db.execute(stmt)
         posts = result.scalars().all()
@@ -297,8 +320,19 @@ async def get_map_points(
                     "lat": p.geo_lat,
                     "lng": p.geo_lng,
                     "description": p.description,
-                    "photo": p.media[0].url if p.media else None,
+                    "photos": [m.url for m in p.media] if p.media else [],
                     "city": p.city,
+                    "regionId": p.region_id,
+                    "season": p.season.value if hasattr(p.season, "value") else str(p.season),
+                    "needCar": p.need_car,
+                    "priceLevel": p.price_level.value if p.price_level and hasattr(p.price_level, "value") else None,
+                    "ratingAvg": float(p.rating_avg) if p.rating_avg else None,
+                    "reviewsCount": p.reviews_count,
+                    "address": p.address,
+                    "phone": p.phone,
+                    "website": p.website,
+                    "interests": [{"id": i.id, "name": i.name, "emoji": i.emoji} for i in p.interests] if p.interests else [],
+                    "verified": p.verified,
                 }
                 for p in posts
             ],
