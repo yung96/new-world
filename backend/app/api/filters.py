@@ -220,6 +220,7 @@ async def get_map_points(
     zoom: int = 6,
     lat: float | None = None,
     lng: float | None = None,
+    place_type: str | None = None,
     db: AsyncSession = Depends(get_db_session),
 ):
     """
@@ -276,11 +277,18 @@ async def get_map_points(
     ]
 
     # Places
+    # place_type: Ресторан, Кафе, Гостиница, Пляж, Парк, Музей, Винодельня, Водопад, Смотровая, Заправка, Храм
     stmt = (
         select(Post)
         .where(Post.geo_lat.isnot(None))
         .options(selectinload(Post.media), selectinload(Post.interests))
     )
+    if place_type:
+        from sqlalchemy import or_
+        stmt = stmt.where(or_(
+            Post.title.ilike(f"%{place_type}%"),
+            Post.description.ilike(f"%{place_type}%"),
+        ))
     if lat and lng:
         delta = 2.0 if zoom < 8 else 1.0 if zoom < 12 else 0.5
         stmt = stmt.where(
