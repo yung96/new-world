@@ -175,6 +175,136 @@ async def get_cities_with_photos(
     return out
 
 
+@router.get(
+    "/regions",
+    summary="Регионы/районы/города для карты",
+)
+async def get_regions(
+    type: str | None = None,
+    parent_id: int | None = None,
+    db: AsyncSession = Depends(get_db_session),
+):
+    """
+    Без параметров — всё. type=city/district/region. parent_id — дочерние.
+    Фронт использует для зума: zoom < 8 → district, zoom >= 8 → city.
+    """
+    stmt = select(GeoRegion)
+    if type:
+        stmt = stmt.where(GeoRegion.type == type)
+    if parent_id:
+        stmt = stmt.where(GeoRegion.parent_id == parent_id)
+    stmt = stmt.order_by(GeoRegion.name)
+
+    result = await db.execute(stmt)
+    regions = result.scalars().all()
+    return [
+        {
+            "id": r.id,
+            "name": r.name,
+            "slug": r.slug,
+            "type": r.type,
+            "parentId": r.parent_id,
+            "photo": r.polygon,
+            "centroid": r.centroid,
+            "population": r.population,
+        }
+        for r in regions
+    ]
+
+
+@router.get(
+    "/map-points",
+    summary="Точки для карты: регионы + места в зависимости от зума",
+)
+async def get_map_points(
+    zoom: int = 6,
+    lat: float | None = None,
+    lng: float | None = None,
+    db: AsyncSession = Depends(get_db_session),
+):
+    """
+    zoom < 8 → районы (centroids)
+    zoom 8-11 → города (centroids)
+    zoom >= 12 → конкретные места (posts) в видимой области
+    lat/lng — центр карты, для фильтрации мест в радиусе
+    """
+    from app.models.post import Post
+    from app.models.schedule import PostMedia
+
+    if zoom < 8:
+        # Районы
+        result = await db.execute(
+            select(GeoRegion).where(GeoRegion.type == "district")
+        )
+        regions = result.scalars().all()
+        return {
+            "level": "district",
+            "points": [
+                {
+                    "id": r.id,
+                    "name": r.name,
+                    "type": "district",
+                    "centroid": r.centroid,
+                    "photo": r.polygon,
+                }
+                for r in regions if r.centroid
+            ],
+        }
+
+    elif zoom < 12:
+        # Города
+        result = await db.execute(
+            select(GeoRegion).where(GeoRegion.type == "city")
+        )
+        cities = result.scalars().all()
+        return {
+            "level": "city",
+            "points": [
+                {
+                    "id": c.id,
+                    "name": c.name,
+                    "type": "city",
+                    "centroid": c.centroid,
+                    "photo": c.polygon,
+                    "population": c.population,
+                }
+                for c in cities if c.centroid
+            ],
+        }
+
+    else:
+        # Конкретные места
+        from sqlalchemy.orm import selectinload
+        stmt = select(Post).where(Post.geo_lat.isnot(None)).options(selectinload(Post.media))
+
+        if lat and lng:
+            delta = 0.5  # ~50km
+            stmt = stmt.where(
+                Post.geo_lat.between(lat - delta, lat + delta),
+                Post.geo_lng.between(lng - delta, lng + delta),
+            )
+
+        stmt = stmt.limit(100)
+        result = await db.execute(stmt)
+        posts = result.scalars().all()
+        return {
+            "level": "place",
+            "points": [
+                {
+                    "id": p.id,
+                    "name": p.title,
+                    "type": "place",
+                    "lat": p.geo_lat,
+                    "lng": p.geo_lng,
+                    "description": p.description,
+                    "photo": p.media[0].url if p.media else None,
+                    "city": p.city,
+                }
+                for p in posts
+            ],
+        }
+
+
 # ── User presets CRUD ────────────────────────────────────────────────────────
 
 class PresetCreateRequest(BaseModel):
