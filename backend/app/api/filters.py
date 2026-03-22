@@ -214,7 +214,7 @@ async def get_regions(
 
 @router.get(
     "/map-points",
-    summary="Точки для карты: регионы + места в зависимости от зума",
+    summary="Все слои карты: районы (полигоны) + города + места",
 )
 async def get_map_points(
     zoom: int = 6,
@@ -223,122 +223,103 @@ async def get_map_points(
     db: AsyncSession = Depends(get_db_session),
 ):
     """
-    zoom < 8 → районы (centroids)
-    zoom 8-11 → города (centroids)
-    zoom >= 12 → конкретные места (posts) в видимой области
-    lat/lng — центр карты, для фильтрации мест в радиусе
+    Всегда отдаёт все слои. Фронт сам решает что показывать по зуму.
+    zoom передаётся для оптимизации: при мелком зуме места фильтруются шире.
     """
-    from app.models.post import Post
-    from app.models.schedule import PostMedia
-
+    import json as _json
     from sqlalchemy.orm import selectinload
     from sqlalchemy import func as sa_func
     from app.models.post import Post
 
-    if zoom < 8:
-        # Районы + кол-во мест
-        result = await db.execute(select(GeoRegion).where(GeoRegion.type == "district"))
-        regions = result.scalars().all()
-        counts = {}
-        cnt_res = await db.execute(
-            select(Post.region_id, sa_func.count(Post.id)).where(Post.region_id.isnot(None)).group_by(Post.region_id)
-        )
-        for rid, cnt in cnt_res.all():
-            counts[rid] = cnt
+    # Counts per region
+    counts = {}
+    cnt_res = await db.execute(
+        select(Post.region_id, sa_func.count(Post.id)).where(Post.region_id.isnot(None)).group_by(Post.region_id)
+    )
+    for rid, cnt in cnt_res.all():
+        counts[rid] = cnt
 
-        import json as _json
-        return {
-            "level": "district",
-            "points": [
-                {
-                    "id": r.id,
-                    "name": r.name,
-                    "slug": r.slug,
-                    "type": "district",
-                    "centroid": r.centroid,
-                    "photo": r.photo_url,
-                    "polygon": _json.loads(r.polygon) if r.polygon else None,
-                    "population": r.population,
-                    "placesCount": counts.get(r.id, 0),
-                    "description": CITY_INFO.get(r.name, {}).get("desc"),
-                }
-                for r in regions if r.centroid
-            ],
+    # Districts with polygons
+    districts_res = await db.execute(select(GeoRegion).where(GeoRegion.type == "district"))
+    districts = [
+        {
+            "id": r.id,
+            "name": r.name,
+            "slug": r.slug,
+            "type": "district",
+            "centroid": r.centroid,
+            "photo": r.photo_url,
+            "polygon": _json.loads(r.polygon) if r.polygon else None,
+            "population": r.population,
+            "placesCount": counts.get(r.id, 0),
+            "description": CITY_INFO.get(r.name, {}).get("desc"),
         }
+        for r in districts_res.scalars().all() if r.centroid
+    ]
 
-    elif zoom < 12:
-        # Города + кол-во мест + инфо
-        result = await db.execute(select(GeoRegion).where(GeoRegion.type == "city"))
-        cities = result.scalars().all()
-        counts = {}
-        cnt_res = await db.execute(
-            select(Post.region_id, sa_func.count(Post.id)).where(Post.region_id.isnot(None)).group_by(Post.region_id)
-        )
-        for rid, cnt in cnt_res.all():
-            counts[rid] = cnt
-
-        return {
-            "level": "city",
-            "points": [
-                {
-                    "id": c.id,
-                    "name": c.name,
-                    "slug": c.slug,
-                    "type": "city",
-                    "centroid": c.centroid,
-                    "photo": c.photo_url,
-                    "population": c.population,
-                    "placesCount": counts.get(c.id, 0),
-                    "description": CITY_INFO.get(c.name, {}).get("desc"),
-                    "avgPricePerDay": CITY_INFO.get(c.name, {}).get("avgPrice"),
-                }
-                for c in cities if c.centroid
-            ],
+    # Cities
+    cities_res = await db.execute(select(GeoRegion).where(GeoRegion.type == "city"))
+    cities = [
+        {
+            "id": c.id,
+            "name": c.name,
+            "slug": c.slug,
+            "type": "city",
+            "centroid": c.centroid,
+            "photo": c.photo_url,
+            "population": c.population,
+            "placesCount": counts.get(c.id, 0),
+            "description": CITY_INFO.get(c.name, {}).get("desc"),
+            "avgPricePerDay": CITY_INFO.get(c.name, {}).get("avgPrice"),
         }
+        for c in cities_res.scalars().all() if c.centroid
+    ]
 
-    else:
-        # Места — полная инфа
-        stmt = (
-            select(Post)
-            .where(Post.geo_lat.isnot(None))
-            .options(selectinload(Post.media), selectinload(Post.interests))
+    # Places
+    stmt = (
+        select(Post)
+        .where(Post.geo_lat.isnot(None))
+        .options(selectinload(Post.media), selectinload(Post.interests))
+    )
+    if lat and lng:
+        delta = 2.0 if zoom < 8 else 1.0 if zoom < 12 else 0.5
+        stmt = stmt.where(
+            Post.geo_lat.between(lat - delta, lat + delta),
+            Post.geo_lng.between(lng - delta, lng + delta),
         )
-        if lat and lng:
-            delta = 0.5
-            stmt = stmt.where(
-                Post.geo_lat.between(lat - delta, lat + delta),
-                Post.geo_lng.between(lng - delta, lng + delta),
-            )
-        stmt = stmt.limit(100)
-        result = await db.execute(stmt)
-        posts = result.scalars().all()
-        return {
-            "level": "place",
-            "points": [
-                {
-                    "id": p.id,
-                    "name": p.title,
-                    "type": "place",
-                    "lat": p.geo_lat,
-                    "lng": p.geo_lng,
-                    "description": p.description,
-                    "photos": [m.url for m in p.media] if p.media else [],
-                    "city": p.city,
-                    "regionId": p.region_id,
-                    "season": p.season.value if hasattr(p.season, "value") else str(p.season),
-                    "needCar": p.need_car,
-                    "priceLevel": p.price_level.value if p.price_level and hasattr(p.price_level, "value") else None,
-                    "ratingAvg": float(p.rating_avg) if p.rating_avg else None,
-                    "reviewsCount": p.reviews_count,
-                    "address": p.address,
-                    "phone": p.phone,
-                    "website": p.website,
-                    "interests": [{"id": i.id, "name": i.name, "emoji": i.emoji} for i in p.interests] if p.interests else [],
-                    "verified": p.verified,
-                }
-                for p in posts
-            ],
+    stmt = stmt.limit(200)
+    posts_res = await db.execute(stmt)
+    places = [
+        {
+            "id": p.id,
+            "name": p.title,
+            "type": "place",
+            "lat": p.geo_lat,
+            "lng": p.geo_lng,
+            "description": p.description,
+            "photos": [m.url for m in p.media] if p.media else [],
+            "city": p.city,
+            "regionId": p.region_id,
+            "season": p.season.value if hasattr(p.season, "value") else str(p.season),
+            "needCar": p.need_car,
+            "priceLevel": p.price_level.value if p.price_level and hasattr(p.price_level, "value") else None,
+            "ratingAvg": float(p.rating_avg) if p.rating_avg else None,
+            "reviewsCount": p.reviews_count,
+            "address": p.address,
+            "phone": p.phone,
+            "website": p.website,
+            "interests": [{"id": i.id, "name": i.name, "emoji": i.emoji} for i in p.interests] if p.interests else [],
+            "verified": p.verified,
         }
+        for p in posts_res.scalars().all()
+    ]
+
+    return {
+        "zoom": zoom,
+        "districts": districts,
+        "cities": cities,
+        "places": places,
+    }
 
 
 # ── User presets CRUD ────────────────────────────────────────────────────────
