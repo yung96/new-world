@@ -522,11 +522,16 @@ async def get_trip_schedule(
             )
             gpt = GptService()
             try:
-                raw = await gpt.request_openai_text_response(
+                resp = await gpt.request_openai_text_response(
                     sys_prompt="Ты — местный гид по Краснодарскому краю.",
                     user_prompt=prompt,
                     max_tokens=800,
                 )
+                raw = None
+                if resp and hasattr(resp, 'choices') and resp.choices:
+                    raw = resp.choices[0].message.content
+                elif isinstance(resp, str):
+                    raw = resp
                 if raw:
                     # Parse JSON from response
                     import re
@@ -552,4 +557,199 @@ async def get_trip_schedule(
         "totalKm": params.get("total_km"),
         "weather": weather_per_day,
         "days": days,
+    }
+
+
+# --- Place detail ---
+
+
+@router.get(
+    "/place/{post_id}",
+    summary="Полная карточка места + отзывы + похожие + nearby",
+)
+async def get_place_detail(
+    post_id: int,
+    db: AsyncSession = Depends(get_db_session),
+):
+    from sqlalchemy.orm import selectinload
+    from app.models.post import Post
+    from app.models.review import Review
+    from app.models.schedule import PostMedia, PlaceSchedule
+    from app.models.interest import Interest
+    from app.models.event import Event, Offer
+    from app.models.geo import GeoRegion
+    from app.services.pipeline.helpers import nearest_n, haversine
+    from datetime import date
+
+    post = (await db.execute(
+        select(Post)
+        .where(Post.id == post_id)
+        .options(selectinload(Post.media), selectinload(Post.interests))
+    )).scalar_one_or_none()
+
+    if not post:
+        raise HTTPException(status_code=404, detail="Place not found")
+
+    # Reviews
+    reviews = (await db.execute(
+        select(Review).where(Review.post_id == post_id).order_by(Review.created_at.desc()).limit(10)
+    )).scalars().all()
+
+    # Schedule
+    schedule = (await db.execute(
+        select(PlaceSchedule).where(PlaceSchedule.post_id == post_id).order_by(PlaceSchedule.day_of_week)
+    )).scalars().all()
+
+    # Region info
+    region = None
+    if post.region_id:
+        region = await db.get(GeoRegion, post.region_id)
+
+    # Nearby places
+    all_posts = (await db.execute(
+        select(Post).where(Post.geo_lat.isnot(None), Post.id != post_id).options(selectinload(Post.media))
+    )).scalars().all()
+    nearby = nearest_n(post.geo_lat or 0, post.geo_lng or 0, all_posts, 5, max_km=30)
+
+    # Events at this place
+    today = date.today()
+    events = (await db.execute(
+        select(Event).where(Event.post_id == post_id, Event.date_to >= today)
+    )).scalars().all()
+
+    # Offers at this place
+    offers = (await db.execute(
+        select(Offer).where(Offer.post_id == post_id, Offer.valid_to >= today)
+    )).scalars().all()
+
+    return {
+        "id": post.id,
+        "title": post.title,
+        "description": post.description,
+        "photos": [m.url for m in post.media] if post.media else [],
+        "city": post.city,
+        "region": {"id": region.id, "name": region.name} if region else None,
+        "lat": post.geo_lat,
+        "lng": post.geo_lng,
+        "address": post.address,
+        "phone": post.phone,
+        "email": post.email,
+        "website": post.website,
+        "season": post.season.value if hasattr(post.season, "value") else str(post.season),
+        "needCar": post.need_car,
+        "priceLevel": post.price_level.value if post.price_level and hasattr(post.price_level, "value") else None,
+        "durationHours": post.duration_hours,
+        "bestAngle": post.best_angle,
+        "verified": post.verified,
+        "rating": {
+            "avg": float(post.rating_avg) if post.rating_avg else None,
+            "count": post.reviews_count,
+        },
+        "interests": [
+            {"id": i.id, "name": i.name, "emoji": i.emoji}
+            for i in post.interests
+        ] if post.interests else [],
+        "schedule": [
+            {"dayOfWeek": s.day_of_week, "open": str(s.open_time) if s.open_time else None,
+             "close": str(s.close_time) if s.close_time else None, "isClosed": s.is_closed}
+            for s in schedule
+        ],
+        "reviews": [
+            {
+                "id": r.id,
+                "rating": r.rating,
+                "comment": r.comment,
+                "createdAt": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in reviews
+        ],
+        "nearby": [
+            {
+                "id": p.id,
+                "title": p.title,
+                "description": p.description,
+                "photo": p.media[0].url if p.media else None,
+                "distanceKm": round(dist, 1),
+                "city": p.city,
+            }
+            for p, dist in nearby
+        ],
+        "events": [
+            {"id": e.id, "title": e.title, "description": e.description,
+             "dateFrom": e.date_from.isoformat(), "dateTo": e.date_to.isoformat()}
+            for e in events
+        ],
+        "offers": [
+            {"id": o.id, "title": o.title, "description": o.description,
+             "discount": o.discount_percent}
+            for o in offers
+        ],
+    }
+
+
+@router.get(
+    "/place/{post_id}/ai",
+    summary="ИИ-рекомендация по месту",
+)
+async def get_place_ai(
+    post_id: int,
+    db: AsyncSession = Depends(get_db_session),
+):
+    from sqlalchemy.orm import selectinload
+    from app.models.post import Post
+
+    post = (await db.execute(
+        select(Post).where(Post.id == post_id).options(selectinload(Post.interests))
+    )).scalar_one_or_none()
+
+    if not post:
+        raise HTTPException(status_code=404, detail="Place not found")
+
+    # Try GPT
+    ai_text = None
+    try:
+        from app.core.config import settings
+        key = getattr(settings, "GPT_CLIENT_KEY", None) or ""
+        if key and key.lower() not in ("", "fake", "x"):
+            from app.services.gpt_service import GptService
+            prompt = (
+                f"Место: {post.title}, {post.city}.\n"
+                f"Описание: {post.description}\n"
+                f"Сезон: {post.season}\n"
+                f"Интересы: {', '.join(i.name for i in post.interests) if post.interests else 'нет'}\n\n"
+                "Напиши 3-4 предложения от второго лица (вы):\n"
+                "1. Почему стоит посетить\n"
+                "2. Лучшее время для визита\n"
+                "3. Практичный совет (что взять, сколько стоит, куда потом)\n"
+                "Без слов 'уникальный', 'незабываемый'. Конкретика."
+            )
+            gpt = GptService()
+            try:
+                resp = await gpt.request_openai_text_response(
+                    sys_prompt="Ты — местный гид по Краснодарскому краю. Кратко и по делу.",
+                    user_prompt=prompt,
+                    max_tokens=400,
+                )
+                if resp and hasattr(resp, 'choices') and resp.choices:
+                    ai_text = resp.choices[0].message.content
+                elif isinstance(resp, str):
+                    ai_text = resp
+            finally:
+                await gpt.close()
+    except Exception:
+        pass
+
+    if not ai_text:
+        # Fallback
+        interests_str = ", ".join(i.name.lower() for i in post.interests) if post.interests else "отдых"
+        ai_text = (
+            f"{post.title} — отличный выбор для тех, кто любит {interests_str}. "
+            f"{post.description} "
+            f"Лучшее время для посещения — {post.season}."
+        )
+
+    return {
+        "postId": post.id,
+        "title": post.title,
+        "recommendation": ai_text,
     }
