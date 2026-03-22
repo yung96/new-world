@@ -181,6 +181,23 @@ async def step_scoring(route_id: int, params: dict[str, Any]) -> None:
                     }),
                 ))
 
+        # Create pins for map
+        from app.models.route import RoutePin
+        pin_pos = 0
+        for p in clustered:
+            db.add(RoutePin(
+                route_id=route_id,
+                label=str(pin_pos + 1),
+                pin_type="experience",
+                lat=p.geo_lat,
+                lng=p.geo_lng,
+                icon=None,
+                source="auto",
+                position=pin_pos,
+                notes=p.title,
+            ))
+            pin_pos += 1
+
         await db.commit()
         logger.info(
             "[pipeline] scoring: {} places, {} days for route {}",

@@ -319,7 +319,6 @@ async def get_map_points(
         "districts": districts,
         "cities": cities,
         "places": places,
-        "routes": await _get_map_routes(db),
     }
 
 
