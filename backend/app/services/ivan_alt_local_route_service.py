@@ -24,7 +24,7 @@ from app.services.user_route_service import UserRouteService
 LOCAL_ROUTE_SYSTEM_PROMPT = """Ты составляешь пеший/локальный маршрут по местам из базы приложения «Краевед».
 
 Правила:
-1) В ordered_stops должны быть РОВНО все post_id из массива candidatePlaces, каждый id — ровно один раз. Порядок остановок выбираешь сам: удобная цепочка по карте (lat/lon), пешая логика, смысл маршрута. НЕ упорядочивай места по relevanceScore и по весам из userInterests — веса не задают порядок.
+1) В ordered_stops должны быть РОВНО все post_id из массива candidatePlaces (поле postId у каждого элемента), каждый id — ровно один раз. Никаких других чисел: только целые postId из этого списка. Порядок остановок выбираешь сам: удобная цепочка по карте (lat/lon), пешая логика, смысл маршрута. НЕ упорядочивай места по relevanceScore и по весам из userInterests — веса не задают порядок.
 2) Точка старта пользователя (startLat/startLng) — не пост; её не включай в post_id. Работай только с id из candidatePlaces.
 3) В caption для каждой остановки: обращение на «вы», тёплый тон; можно мягко связать с интересами пользователя из userInterests (названия интересов). Не ссылайся на числовые веса и не объясняй порядок через «главнее / менее важно».
 4) В тексте caption используй только то, что можно вывести из полей этого места в candidatePlaces: title, description, city, interestIds и названия интересов из userInterests. Не придумывай конкретные детали (меню, экспозиции, цены, часы, «десерты», «аттракционы» и т.п.), если их нет в title/description. Допустимы общие формулировки без новых фактов.
@@ -119,24 +119,75 @@ class IvanAltLocalRouteService:
             ],
         )
 
-    def _sanitize_llm_order(
-        self,
+    _FALLBACK_CAPTION = (
+        "Точка в маршруте — загляните по пути; смотрится в тему ваших интересов."
+    )
+
+    @staticmethod
+    def _repair_llm_order(
         raw: IvanAltLocalRouteLlmOut,
-        expected_ids: set[int],
+        candidate_ids_ordered: list[int],
     ) -> tuple[IvanAltLocalRouteLlmOut, list[str]]:
+        """
+        Приводит ответ LLM к множеству кандидатов: отбрасывает чужие id и дубликаты,
+        недостающие места дописывает в конец (порядок кандидатов по релевантности).
+        """
         warns: list[str] = []
-        stops = raw.ordered_stops
-        got_ids = [s.post_id for s in stops]
-        if len(got_ids) != len(set(got_ids)):
-            raise ValueError("LLM вернул дубликаты post_id в ordered_stops")
-        if set(got_ids) != expected_ids:
-            raise ValueError(
-                "LLM вернул набор post_id, не совпадающий с кандидатами "
-                f"(ожидалось {len(expected_ids)} мест)"
+        expected_set = set(candidate_ids_ordered)
+        if not candidate_ids_ordered:
+            return raw, warns
+
+        invalid: list[int] = []
+        ordered: list[IvanAltLocalRouteStopLlm] = []
+        used: set[int] = set()
+
+        for s in raw.ordered_stops:
+            pid = s.post_id
+            if pid not in expected_set:
+                invalid.append(pid)
+                continue
+            if pid in used:
+                continue
+            ordered.append(s)
+            used.add(pid)
+
+        if invalid:
+            tail = "" if len(invalid) <= 15 else " …"
+            warns.append(
+                "LLM вернул post_id вне списка кандидатов (отброшены): "
+                + ", ".join(str(x) for x in invalid[:15])
+                + tail
             )
-        if len(got_ids) != len(expected_ids):
-            raise ValueError("Неверная длина ordered_stops")
-        return raw, warns
+
+        raw_n = len(raw.ordered_stops)
+        if len(used) < len(expected_set):
+            n_miss = len(expected_set) - len(used)
+            warns.append(
+                f"В ответе LLM не хватало {n_miss} из {len(expected_set)} кандидатов — "
+                "добавлены в конец цепочки с нейтральной подписью."
+            )
+        elif raw_n > len(ordered) and not invalid:
+            warns.append(
+                "В ordered_stops были дубликаты — сохранён первый валидный порядок по каждому post_id."
+            )
+
+        missing = [pid for pid in candidate_ids_ordered if pid not in used]
+        for pid in missing:
+            ordered.append(
+                IvanAltLocalRouteStopLlm(
+                    post_id=pid,
+                    caption=IvanAltLocalRouteService._FALLBACK_CAPTION,
+                    highlighted_interest_ids=[],
+                )
+            )
+            used.add(pid)
+
+        repaired = IvanAltLocalRouteLlmOut(
+            route_title=raw.route_title,
+            intro=raw.intro,
+            ordered_stops=ordered,
+        )
+        return repaired, warns
 
     async def build(
         self,
@@ -216,11 +267,17 @@ class IvanAltLocalRouteService:
             "candidatePlaces": candidates_payload,
         }
         ctx_json = json.dumps(ctx, ensure_ascii=False)
+        id_list_str = ", ".join(str(x) for x in candidate_ids)
+        user_prompt = (
+            "Собери маршрут по JSON-контексту:\n"
+            + ctx_json
+            + f"\n\nНапоминание: в ordered_stops допустимы ТОЛЬКО эти post_id (ровно все, по одному разу): [{id_list_str}]."
+        )
         trace: dict[str, Any] | None = None
         if include_trace:
             trace = {
                 "systemPrompt": LOCAL_ROUTE_SYSTEM_PROMPT,
-                "userPrompt": "Собери маршрут по JSON-контексту:\n" + ctx_json,
+                "userPrompt": user_prompt,
                 "context": json.loads(ctx_json),
             }
 
@@ -240,10 +297,10 @@ class IvanAltLocalRouteService:
             try:
                 llm_out, _tok = await gpt.request_openai_pydantic_response(
                     sys_prompt=LOCAL_ROUTE_SYSTEM_PROMPT,
-                    user_prompt="Собери маршрут по JSON-контексту:\n" + ctx_json,
+                    user_prompt=user_prompt,
                     response_model=IvanAltLocalRouteLlmOut,
                     max_tokens=4096,
-                    temperature=0.45,
+                    temperature=0.35,
                 )
                 if llm_out is None:
                     raise ValueError("LLM вернул пустой разбор ответа")
@@ -251,7 +308,7 @@ class IvanAltLocalRouteService:
             finally:
                 await gpt.close()
 
-        llm_out, w2 = self._sanitize_llm_order(llm_out, set(candidate_ids))
+        llm_out, w2 = self._repair_llm_order(llm_out, candidate_ids)
         warnings.extend(w2)
 
         stops_out: list[dict[str, Any]] = []
