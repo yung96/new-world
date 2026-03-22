@@ -48,6 +48,9 @@ async def test_my_interests_add_and_get(client):
     assert isinstance(data, list)
     interest_ids = [i["id"] for i in data]
     assert interest_id in interest_ids
+    row = next(i for i in data if i["id"] == interest_id)
+    assert "weight" in row
+    assert isinstance(row["weight"], int)
 
 
 @pytest.mark.asyncio

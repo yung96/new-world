@@ -274,15 +274,20 @@ async def get_my_interests(
     db: AsyncSession = Depends(get_db_session),
 ):
     stmt = (
-        select(Interest)
+        select(Interest, user_interests.c.weight)
         .join(user_interests, user_interests.c.interest_id == Interest.id)
         .where(user_interests.c.user_id == current_user.id)
     )
     result = await db.execute(stmt)
-    interests = result.scalars().all()
+    rows = result.all()
     return [
-        {"id": i.id, "name": i.name, "emoji": i.emoji}
-        for i in interests
+        {
+            "id": i.id,
+            "name": i.name,
+            "emoji": i.emoji,
+            "weight": int(w),
+        }
+        for i, w in rows
     ]
 
 
