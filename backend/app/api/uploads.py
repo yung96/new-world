@@ -1,5 +1,4 @@
 from pathlib import Path
-from urllib.parse import urlparse
 import uuid
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
@@ -8,12 +7,9 @@ from loguru import logger
 
 from app.api.base_schema import BasePydanticModel
 from app.core.config import settings
+from app.core.upload_paths import UPLOAD_DIR, extract_uploaded_filename
 
 router = APIRouter()
-
-# backend/uploads
-UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
@@ -29,24 +25,6 @@ def _safe_file_path(filename: str) -> Path | None:
     if not str(file_path).startswith(str(base)):
         return None
     return file_path
-
-
-def extract_uploaded_filename(file_url: str) -> str | None:
-    if not file_url:
-        return None
-    try:
-        parsed = urlparse(file_url)
-        path = parsed.path or file_url
-    except Exception as e:
-        logger.warning(e)
-        path = file_url
-
-    marker = "/api/uploads/"
-    idx = path.find(marker)
-    if idx == -1:
-        return None
-    filename = path[idx + len(marker) :].lstrip("/")
-    return filename or None
 
 
 def delete_uploaded_file(file_url: str | None) -> None:

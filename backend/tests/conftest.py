@@ -5,6 +5,7 @@ from pathlib import Path
 # Добавляем корень backend в sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
@@ -31,6 +32,12 @@ os.environ.setdefault("IVAN_ALT_TEST_SECRET", "test-ivan-e2e-panel")
 
 from app.core.config import settings
 from app.models import Base
+
+
+@pytest.fixture(autouse=True)
+def disable_real_gpt_in_tests(monkeypatch):
+    """Не вызываем внешний GPT из тестов (.env.test может содержать боевой ключ)."""
+    monkeypatch.setattr(settings, "GPT_CLIENT_KEY", "fake")
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi import HTTPException, status
 
-from app.api.uploads import UPLOAD_DIR, extract_uploaded_filename
+from app.core.upload_paths import UPLOAD_DIR, extract_uploaded_filename
 
 MAX_POST_PHOTOS = 20
 

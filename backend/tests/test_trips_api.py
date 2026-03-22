@@ -4,7 +4,7 @@ Tests for /api/trips/* place-detail endpoints.
 Covered:
 - GET /api/trips/place/{id}     — full place card with photos, reviews, nearby
 - GET /api/trips/place/999999   — 404 for unknown place
-- GET /api/trips/place/{id}/ai  — AI recommendation text (fallback path, no real GPT key)
+- GET /api/trips/place/{id}/ai  — текст рекомендации (в CI без реального GPT: conftest выставляет фейковый ключ)
 """
 
 import pytest
@@ -114,7 +114,7 @@ async def test_trip_place_ai(client):
     assert "title" in data
     assert "recommendation" in data
 
-    # The fallback path is used in tests (no real GPT key).
+    # Реальный GPT отключён в conftest (GPT_CLIENT_KEY=fake) — ответ собирается из данных места.
     # The text must be a non-empty string.
     assert isinstance(data["recommendation"], str)
     assert len(data["recommendation"]) > 0

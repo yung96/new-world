@@ -214,7 +214,7 @@ async def get_regions(
 
 @router.get(
     "/map-points",
-    summary="Все слои карты: районы (полигоны) + города + места",
+    summary="Все слои карты: районы (полигоны) + города + места + готовые маршруты",
 )
 async def get_map_points(
     zoom: int = 6,
@@ -322,11 +322,14 @@ async def get_map_points(
         for p in posts_res.scalars().all()
     ]
 
+    routes = await _get_map_routes(db)
+
     return {
         "zoom": zoom,
         "districts": districts,
         "cities": cities,
         "places": places,
+        "routes": routes,
     }
 
 

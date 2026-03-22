@@ -101,6 +101,10 @@ class SubscriptionActivityItemResponse(BasePydanticModel):
     postTitle: str = Field(description="Название места.")
     postCity: str | None = Field(description="Город места (если указан у поста).")
     postRegionId: int | None = Field(description="Идентификатор региона места.")
+    postDescription: str | None = Field(
+        default=None,
+        description="Текстовое описание места с карточки поста (как в ленте / свайпах).",
+    )
 
 
 class SubscriptionActivityListResponse(BasePydanticModel):
@@ -183,6 +187,7 @@ def _to_subscription_activity_item(review: Review) -> SubscriptionActivityItemRe
         postTitle=review.post.title,
         postCity=review.post.city,
         postRegionId=review.post.region_id,
+        postDescription=review.post.description,
     )
 
 

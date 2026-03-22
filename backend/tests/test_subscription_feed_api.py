@@ -17,10 +17,11 @@ async def _create_post(
     *,
     title: str = "Место",
     city: str | None = "Самара",
+    description: str | None = None,
 ) -> int:
     body: dict = {
         "title": title,
-        "description": None,
+        "description": description,
         "geoLat": None,
         "geoLng": None,
         "interestIds": [],
@@ -44,7 +45,11 @@ async def test_subscription_feed_shows_reviews_from_followed_only(client):
     stranger_h, _ = await _auth_headers(client, "+70000000073")
 
     post_id = await _create_post(
-        client, post_author_h, title="Музей А", city="Казань"
+        client,
+        post_author_h,
+        title="Музей А",
+        city="Казань",
+        description="Старинное здание у Кремля.",
     )
 
     sub = await client.post(
@@ -72,6 +77,7 @@ async def test_subscription_feed_shows_reviews_from_followed_only(client):
     assert item["postId"] == post_id
     assert item["postTitle"] == "Музей А"
     assert item["postCity"] == "Казань"
+    assert item["postDescription"] == "Старинное здание у Кремля."
     assert item["authorId"] == reviewer_id
 
     feed_stranger = await client.get("/api/user/subscriptions/feed", headers=stranger_h)
