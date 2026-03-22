@@ -1,4 +1,5 @@
 from api_paths import api
+from app.core.config import settings
 
 
 async def _auth_headers(client, phone: str) -> dict[str, str]:
@@ -136,6 +137,14 @@ async def test_ivan_alt_test_run_wrong_secret(client):
         headers={"X-Ivan-Alt-Test-Secret": "wrong"},
     )
     assert r.status_code == 404
+
+
+async def test_ivan_alt_test_run_allow_no_secret_no_header(client, monkeypatch):
+    monkeypatch.setattr(settings, "IVAN_ALT_TEST_SECRET", None)
+    r = await client.post(api("/ivan-alt/local-routes/test-run?skipLlm=true"))
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert len(body["setup"]["postIds"]) == 2
 
 
 async def test_ivan_alt_test_run_skip_llm(client):

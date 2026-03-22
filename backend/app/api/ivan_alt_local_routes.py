@@ -63,11 +63,20 @@ _IVAN_ALT_PANEL_HTML = """
     pre { background: #0f1728; color: #e2e8f0; padding: 12px; border-radius: 8px; overflow: auto; font-size: 12px; max-height: 420px; }
     .stop { border-bottom: 1px solid var(--line); padding: 10px 0; }
     .muted { color: var(--muted); font-size: 0.85rem; }
+    .e2e-banner {
+      background: #eff4ff; border: 1px solid #b4c7ff; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
+      font-size: 0.9rem; line-height: 1.45;
+    }
+    .e2e-banner a { color: var(--brand); font-weight: 600; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Ivan-alt — тест LLM-маршрута</h1>
+    <div class="e2e-banner">
+      Автотест без JWT и без .env:
+      <a href="test-panel">открыть E2E (одна кнопка)</a>
+    </div>
     <p class="muted">База API: <code id="apiBase"></code>. Нужен JWT из <code>POST …/auth</code> (Bearer).</p>
 
     <div class="card">
@@ -203,7 +212,6 @@ _IVAN_ALT_TEST_PANEL_HTML = """
     .row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
     .row label { margin: 0; display: flex; align-items: center; gap: 8px; }
     .muted { color: var(--muted); font-size: 0.9rem; }
-    .warn { color: var(--err); font-size: 0.9rem; }
     h2 { font-size: 1rem; margin: 0 0 8px; color: var(--muted); font-weight: 600; }
   </style>
 </head>
@@ -211,7 +219,6 @@ _IVAN_ALT_TEST_PANEL_HTML = """
   <div class="wrap">
     <h1>Ivan-alt — один клик: юзер, интересы, карточки → LLM</h1>
     <p class="muted">API: <code id="apiBase"></code> · <code>POST …/test-run</code><span id="secretHint"></span></p>
-    <p id="noSecret" class="warn" style="display:none">E2E выключен: задайте <code>IVAN_ALT_TEST_SECRET</code> или <code>IVAN_ALT_E2E_ALLOW_NO_SECRET=true</code> (только локально).</p>
 
     <div class="card">
       <div id="secretBlock">
@@ -236,16 +243,12 @@ _IVAN_ALT_TEST_PANEL_HTML = """
   </div>
   <script>
     const API_ROOT = __API_MOUNT__;
-    const PANEL_OK = __PANEL_OK__;
     const NEEDS_SECRET = __NEEDS_SECRET__;
     document.getElementById('apiBase').textContent = API_ROOT;
-    if (!PANEL_OK) document.getElementById('noSecret').style.display = 'block';
     const hint = document.getElementById('secretHint');
-    if (NEEDS_SECRET) {
-      hint.textContent = ' + заголовок X-Ivan-Alt-Test-Secret';
-    } else if (PANEL_OK) {
-      hint.textContent = ' (локально без секрета)';
-    }
+    hint.textContent = NEEDS_SECRET
+      ? ' + заголовок X-Ivan-Alt-Test-Secret (задан IVAN_ALT_TEST_SECRET)'
+      : ' — без секрета и .env';
     if (!NEEDS_SECRET) {
       document.getElementById('secretBlock').style.display = 'none';
     } else {
@@ -260,10 +263,6 @@ _IVAN_ALT_TEST_PANEL_HTML = """
       const secret = document.getElementById('secret').value.trim();
       document.getElementById('inp').textContent = '…';
       document.getElementById('out').textContent = '…';
-      if (!PANEL_OK) {
-        alert('E2E на сервере выключен (см. .env)');
-        return;
-      }
       if (NEEDS_SECRET && !secret) {
         alert('Нужен секрет');
         return;
@@ -325,7 +324,6 @@ async def ivan_alt_test_panel():
             "__API_MOUNT__",
             json.dumps(settings.api_mount_path.rstrip("/")),
         )
-        .replace("__PANEL_OK__", json.dumps(settings.ivan_alt_e2e_panel_enabled))
         .replace("__NEEDS_SECRET__", json.dumps(bool(settings.IVAN_ALT_TEST_SECRET)))
     )
     return HTMLResponse(content=html)
