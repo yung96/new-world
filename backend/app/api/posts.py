@@ -54,6 +54,7 @@ class PostResponse(BasePydanticModel):
     bestAngle: str | None
     verified: bool
     interestIds: list[int]
+    photos: list[str]
     season: Season
     averageRating: float | None
     reviewsCount: int
@@ -91,6 +92,7 @@ def _to_response(post: Post, average_rating: float | None = None) -> PostRespons
         bestAngle=post.best_angle,
         verified=post.verified,
         interestIds=[interest.id for interest in post.interests],
+        photos=[m.url for m in post.media] if hasattr(post, 'media') and post.media else [],
         season=post.season,
         averageRating=(
             round(float(average_rating), 2) if average_rating is not None else None
